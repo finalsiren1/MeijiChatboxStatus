@@ -1,133 +1,126 @@
 # 💬 Meiji Chatbox Status (MCS)
 
-แอปโชว์ **สถานะน่ารัก ๆ บน VRChat Chatbox** ค้างไว้ตลอด — เวลา, เพลงที่กำลังฟัง, สถานะ AFK และตัวนับการโดนแตะ Avatar
-ส่งผ่าน OSC ไม่ต้องติดตั้งอะไรใน Avatar (ยกเว้นตัวนับ ที่ใช้ Parameter ของ Avatar)
-
-*English summary at the bottom.*
+Keep an **always-on status in your VRChat chatbox** — the time, the song you're listening to, your AFK status and how many times your avatar got headpatted.
+Everything is sent over OSC, so your avatar needs no changes (except for touch counters, which read an avatar parameter).
 
 ---
 
-## ✨ ฟีเจอร์
+## ✨ Features
 
 | | |
 |---|---|
-| 💬 **ข้อความ Status** | เขียนข้อความเอง ใส่ตัวแปรได้ มีหลายหน้าให้สลับวนโชว์ |
-| 🎵 **เพลงที่กำลังเล่น** | Spotify, YouTube, YouTube Music, Apple Music, SoundCloud ฯลฯ พร้อมแถบเวลา 5 สไตล์ — **โชว์เฉพาะแหล่งเพลง** ไม่จับ TikTok / IG / Facebook / เว็บอื่น |
-| 😴 **AFK** | VRChat บอกเองเมื่อถอดแว่น/สลับหน้าต่าง โชว์ว่า AFK มานานเท่าไหร่ |
-| 💗 **นับการแตะ** | นับเมื่อ Avatar Parameter ทำงาน (เช่น Contact Receiver ที่หัว) แล้วโชว์ข้อความแทรก |
-| 🔌 **OSCQuery** | VRChat หาแอปเจอเอง ไม่ชนพอร์ตกับแอป OSC อื่น (VRCFT, VRCOSC ฯลฯ) |
-| 🎮 **เปิดเองเมื่อเปิด VRChat** | เปิด VRChat ก็เริ่มส่งให้เลย ปิด VRChat ก็หยุด (ปิดตัวเลือกนี้ได้ในตั้งค่า) |
-| 🧹 **ไม่ทิ้งข้อความค้าง** | หยุดส่งหรือปิดโปรแกรมแบบไหนก็ล้าง Chatbox ให้เสมอ รวมถึง End task และโปรแกรมแครช |
-| 🎀 **UI น่ารัก** | 5 ธีม (ซากุระ, ลาเวนเดอร์, มิ้นต์, ท้องฟ้า, กลางคืน), ภาษาไทย/อังกฤษ, ดูตัวอย่าง Chatbox แบบสด |
+| 💬 **Status pages** | Write your own text with variables; several pages can take turns on the chatbox |
+| 🎵 **Now playing** | Spotify, YouTube, YouTube Music, Apple Music, SoundCloud and more, with 5 progress-bar styles — **music sources only**, never TikTok / Instagram / Facebook / random sites |
+| 😴 **AFK** | VRChat reports when you take off your headset or unfocus the game; shows how long you've been away |
+| 💗 **Touch counters** | Counts whenever an avatar parameter turns on (e.g. a Contact Receiver on your head) and briefly shows a message |
+| 🔌 **OSCQuery** | VRChat finds the app by itself — no port conflicts with other OSC apps (VRCFT, VRCOSC, …) |
+| 🎮 **Opens with VRChat** | Start VRChat and your status starts; close it and the status stops (can be turned off in Settings) |
+| 🧹 **Never leaves a stale message** | Stopping or exiting always clears the chatbox — even after "End task" or a crash |
+| 🎀 **Friendly UI** | 5 themes (Sakura, Lavender, Mint, Sky, Night), Thai / English, live chatbox preview |
 
-## 🚀 วิธีใช้
+## 🚀 Getting started
 
-1. ดาวน์โหลด `MeijiChatboxStatus.exe` จากหน้า [**Releases**](https://github.com/finalsiren1/MeijiChatboxStatus/releases/latest) แล้วดับเบิลคลิกเปิด (ไม่ต้องติดตั้ง)
-   - ถ้า Windows ขึ้น *"Windows protected your PC"* ให้กด **More info → Run anyway** (เพราะไฟล์ไม่ได้ซื้อใบรับรอง ไม่ใช่ไวรัส)
-2. ใน VRChat เปิด OSC: **Action Menu ▸ Options ▸ OSC ▸ Enabled**
-3. กด **▶ เริ่มส่ง** (หรือปล่อยให้เริ่มเองตอนเปิด VRChat) — เสร็จ! ♡
+1. Download `MeijiChatboxStatus.exe` from [**Releases**](https://github.com/finalsiren1/MeijiChatboxStatus/releases/latest) and double-click it (no install needed).
+   - If Windows shows *"Windows protected your PC"*, click **More info → Run anyway** (the file simply isn't code-signed).
+2. In VRChat, enable OSC: **Action Menu ▸ Options ▸ OSC ▸ Enabled**.
+3. Press **▶ Start** (or just let it start when VRChat opens) — done! ♡
 
-หลังเปิดครั้งแรก ทุกครั้งที่เปิด VRChat โปรแกรมจะเริ่มส่งให้เอง (มันรอเงียบ ๆ ที่ถาดไอคอนตั้งแต่เปิดเครื่อง)
-ถ้าไม่ต้องการ ปิดได้ที่ **ตั้งค่า ▸ การทำงาน ▸ เปิดโปรแกรมเองเมื่อเปิด VRChat**
+The interface opens in Thai; switch to English in **Settings ▸ Appearance ▸ Language**.
 
-> ใน Task Manager จะเห็น MeijiChatboxStatus 2 ตัว ตัวที่สองเป็นตัวเฝ้าเล็ก ๆ (แรมไม่กี่ MB) ไว้ล้าง Chatbox ถ้าโปรแกรมหลักถูกปิดแบบกะทันหัน
+After the first run, the app starts your status every time you open VRChat (it waits quietly in the system tray from Windows startup).
+To turn this off: **Settings ▸ Behavior ▸ Open automatically with VRChat**.
 
-> ต้องมี **Microsoft Edge WebView2 Runtime** ซึ่ง Windows 10/11 ส่วนใหญ่มีอยู่แล้ว ถ้าไม่มี แอปจะพาไปหน้าดาวน์โหลดให้เอง
+> Task Manager shows two `MeijiChatboxStatus` processes. The second one is a tiny watcher (a few MB of RAM) that clears your chatbox if the main app is closed abruptly.
 
-## 🧩 ตัวแปร
+> Requires the **Microsoft Edge WebView2 Runtime**, which most Windows 10/11 PCs already have. If it's missing, the app offers to open the download page.
 
-**ในหน้าข้อความ Status**
+## 🧩 Variables
 
-| ตัวแปร | ความหมาย | ตัวอย่าง |
+**In status pages**
+
+| Variable | Meaning | Example |
 |---|---|---|
-| `{time}` / `{time12}` | เวลา | `21:30` / `9:30 PM` |
-| `{date}` / `{day}` | วันที่ / วัน | `21/10` / `อังคาร` |
-| `{music}` | เพลงที่กำลังเล่น (ตั้งรูปแบบในแท็บเพลง) | |
-| `{afk}` | ข้อความ AFK (โชว์เฉพาะตอน AFK) | |
-| `{session}` | เวลาที่เปิดส่งมาแล้ว | `1:02:05` |
-| `{count:ชื่อParameter}` | จำนวนนับของตัวนับนั้น | `12` |
+| `{time}` / `{time12}` | Current time | `21:30` / `9:30 PM` |
+| `{date}` / `{day}` | Date / weekday (in the UI language) | `21/10` / `Tue` |
+| `{music}` | Now playing (format it in the Music tab) | |
+| `{afk}` | AFK message (only while AFK) | |
+| `{session}` | How long the status has been running | `1:02:05` |
+| `{count:ParameterName}` | Value of that touch counter | `12` |
 
-**ในแท็บเพลง:** `{title}` `{artist}` `{bar}` `{pos}` `{dur}` `{icon}` `{source}`
-**ในแท็บ AFK:** `{afktime}` **ในข้อความของตัวนับ:** `{count}`
+**Music tab:** `{title}` `{artist}` `{bar}` `{pos}` `{dur}` `{icon}` `{source}`
+**AFK tab:** `{afktime}` · **Counter messages:** `{count}`
 
-บรรทัดที่ตัวแปรไม่มีอะไรจะโชว์ (เช่น `{music}` ตอนไม่ได้เปิดเพลง) จะถูกซ่อนให้อัตโนมัติ
-ข้อความถูกจำกัดที่ 144 ตัวอักษร / 9 บรรทัดตามที่ VRChat รองรับ โดยไม่ตัดอีโมจิหรือสระไทยให้แหว่ง
+Lines whose variables have nothing to show (e.g. `{music}` when nothing is playing) are hidden automatically.
+Messages are limited to VRChat's 144 characters / 9 lines without ever cutting an emoji or a Thai character cluster in half.
 
-## 💗 ตั้งค่าตัวนับการแตะ
+## 💗 Setting up a touch counter
 
-1. ใน Avatar ต้องมี Parameter ที่เปลี่ยนเป็น `true` (หรือมากกว่า 0) เมื่อโดนแตะ — ปกติคือ **VRC Contact Receiver** ที่ตั้ง Parameter ไว้
-   และ Parameter นั้นต้องอยู่ใน *Expression Parameters* ของ Avatar
-2. เปิดแท็บ **นับการแตะ** แล้วให้เพื่อนแตะ — ชื่อ Parameter จะโผล่ในกล่อง *Parameter ที่ได้รับล่าสุด* แตะชื่อนั้นเพื่อเพิ่มได้เลย
-3. แก้ข้อความได้ตามใจ เช่น `🐰 โดนลูบหัวไปแล้ว {count} ครั้ง!` — จำนวนนับถูกจำไว้ข้ามการเปิดปิดแอป
+1. Your avatar needs a parameter that becomes `true` (or above 0) when touched — usually a **VRC Contact Receiver** with a parameter set,
+   and that parameter must be in the avatar's *Expression Parameters*.
+2. Open the **Counters** tab and have a friend touch you — the parameter name appears under *Recently received parameters*. Click it to add a counter.
+3. Edit the message however you like, e.g. `🐰 Headpats: {count}!` — counts are remembered between sessions.
 
-> ถ้าเปลี่ยน Avatar แล้ว Parameter ไม่มา: ลบโฟลเดอร์ `%USERPROFILE%\AppData\LocalLow\VRChat\VRChat\OSC` แล้วเปลี่ยน Avatar ใหม่ (VRChat จะสร้าง config ใหม่)
+> If parameters stop arriving after changing avatars, delete `%USERPROFILE%\AppData\LocalLow\VRChat\VRChat\OSC` and switch avatars again (VRChat regenerates its OSC config).
 
-## ❓ ปัญหาที่พบบ่อย
+## ❓ Troubleshooting
 
-- **Chatbox ไม่ขึ้น** — เช็กว่าเปิด OSC ใน VRChat แล้ว และในแท็บตั้งค่า IP เป็น `127.0.0.1` พอร์ตส่ง `9000`
-- **จุด OSC เป็นสีเหลือง** — แอปพร้อมรับแล้ว แต่ VRChat ยังไม่ได้ส่งอะไรมา (VRChat ส่งเฉพาะตอน Parameter เปลี่ยน ลองขยับตัวดู)
-- **จุด OSC เป็นสีแดง** — พอร์ตรับถูกแอปอื่นใช้อยู่ ให้เปิด OSCQuery (ค่าเริ่มต้น) หรือเปลี่ยนพอร์ตรับ
-- **เพลงไม่ขึ้น** — แอปโชว์เฉพาะแอป/เว็บเพลง (ดูรายชื่อในแท็บเพลง) ถ้าฟังในเบราว์เซอร์ แท็บเพลงต้องเป็นแท็บที่เปิดอยู่ของหน้าต่างนั้น (Windows ไม่บอกชื่อเว็บ แอปเลยดูจากชื่อแท็บ) ถ้าใช้แอป/เว็บเพลงที่ไม่อยู่ในรายชื่อ เพิ่มเองได้ในช่อง *เพิ่มแอป/เว็บเพลงเอง*
-- **ดู log** — แท็บ *บันทึก* ในแอป หรือไฟล์ `%LOCALAPPDATA%\MeijiChatboxStatus\app.log`
+- **Nothing shows in the chatbox** — make sure OSC is enabled in VRChat, and that Settings ▸ Advanced uses IP `127.0.0.1` and send port `9000`.
+- **The OSC dot is yellow** — the app is ready but VRChat hasn't sent anything yet (VRChat only sends parameters when they change — try moving).
+- **The OSC dot is red** — the receive port is taken by another app. Enable OSCQuery (the default) or pick another receive port.
+- **Music doesn't show** — only music apps and music sites are shown (see the list in the Music tab). In a browser, the music tab must be the active tab of its window, because Windows doesn't say which site is playing, so the app checks the tab title. Using a player or site that isn't listed? Add it under *Add your own players/sites*.
+- **Logs** — the *Log* tab in the app, or `%LOCALAPPDATA%\MeijiChatboxStatus\app.log`.
 
-## 📁 ไฟล์ของแอป
+## 📁 Where things are stored
 
 | | |
 |---|---|
-| การตั้งค่า | `%APPDATA%\MeijiChatboxStatus\settings.json` (ย้ายเครื่องได้โดยก๊อปไฟล์นี้) |
-| log + แคชของ WebView2 | `%LOCALAPPDATA%\MeijiChatboxStatus\` |
-| เปิดเองเมื่อเปิด VRChat | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `MeijiChatboxStatus` |
+| Settings | `%APPDATA%\MeijiChatboxStatus\settings.json` (copy it to move your setup to another PC) |
+| Log + WebView2 cache | `%LOCALAPPDATA%\MeijiChatboxStatus\` |
+| Open with VRChat | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `MeijiChatboxStatus` |
 
-ถ้าเคยใช้แอปเวอร์ชันเก่า (VrcAfkNative) ให้วาง `vrc_afk_settings.txt` ไว้ข้าง ๆ exe ตอนเปิดครั้งแรก — ระบบจะนำเข้าข้อความและตัวนับให้อัตโนมัติ
+Coming from the old version (VrcAfkNative)? Put `vrc_afk_settings.txt` next to the exe before the first run and your message and counters are imported automatically.
 
-## 🛠️ Build เอง
+## 🛠️ Building from source
 
-ต้องมี [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ```powershell
-dotnet run --project src\MeijiChatboxStatus          # รันแบบ dev
-dotnet test tests\MeijiChatboxStatus.Tests           # รันชุดทดสอบ
-powershell -ExecutionPolicy Bypass -File .\publish.ps1 [-Lite]   # สร้างไฟล์แจกใน .\dist
+dotnet run --project src\MeijiChatboxStatus                     # run in development
+dotnet test tests\MeijiChatboxStatus.Tests                      # run the tests
+powershell -ExecutionPolicy Bypass -File .\publish.ps1 [-Lite]  # build the release exe into .\dist
 ```
 
-โครงสร้าง:
+Layout:
 
 ```
 src/MeijiChatboxStatus/
-  Program.cs           จุดเริ่ม: เปิดได้ทีละหน้าต่าง, เช็ก WebView2
-  MainForm.cs          หน้าต่าง WebView2 + ถาดไอคอน + สะพานเชื่อม JS ⇄ C#
+  Program.cs           entry point: single instance, WebView2 check, crash handling
+  MainForm.cs          WebView2 window + tray icon + JS ⇄ C# bridge
   Core/
-    Osc.cs             เข้ารหัส/ถอดรหัส OSC
-    OscService.cs      ส่ง/รับ OSC + OSCQuery
-    MediaWatcher.cs    อ่านเพลงจาก Windows
-    StatusEngine.cs    ประกอบข้อความ + จังหวะการส่ง + ตัวนับ + AFK
-    TextFormat.cs      ตัวแปร, จัดบรรทัด, ตัด 144 ตัวอักษร, แถบเวลา
-    Settings.cs        การตั้งค่า (JSON) + นำเข้าจากเวอร์ชันเก่า
-  wwwroot/             WebUI (HTML/CSS/JS ล้วน ฝังอยู่ใน exe เปิด offline ได้)
+    Osc.cs             OSC encoding/decoding
+    OscService.cs      OSC send/receive + OSCQuery
+    MediaWatcher.cs    now playing from Windows media sessions
+    MediaFilter.cs     music-only source filter
+    StatusEngine.cs    builds the message, send pacing, counters, AFK
+    TextFormat.cs      variables, line tidying, 144-char limit, progress bars
+    Settings.cs        JSON settings + import from the old version
+    ChatboxGuard.cs    clears the chatbox however the app exits
+    Autorun.cs         "open with VRChat" (Windows startup entry)
+  wwwroot/             WebUI (plain HTML/CSS/JS, embedded in the exe, works offline)
 tests/MeijiChatboxStatus.Tests/
-tools/make-icon.ps1    สร้างไอคอนแอป
+tools/
+  make-icon.ps1        generates the app icon
+  audit-webui.mjs      finds unused UI strings / CSS
 ```
 
-WebUI เปิดดีไซน์ในเบราว์เซอร์ได้เลย (เปิด `src/MeijiChatboxStatus/wwwroot/index.html` จะใช้ข้อมูลจำลอง)
+The WebUI can be designed in a normal browser: open `src/MeijiChatboxStatus/wwwroot/index.html` and it runs with mock data.
 
 ## 📜 License
 
-[MIT](LICENSE) — ใช้ฟรี แก้ไข แจกต่อได้ตามสบาย
+[MIT](LICENSE) — free to use, modify and share.
 
-## 💖 เครดิต
+## 💖 Credits
 
-- ฟอนต์ [Noto Sans Thai](https://github.com/notofonts/thai) — SIL Open Font License 1.1 (`wwwroot/fonts/OFL.txt`)
+- [Noto Sans Thai](https://github.com/notofonts/thai) font — SIL Open Font License 1.1 (`wwwroot/fonts/OFL.txt`)
 - [vrc-oscquery-lib](https://github.com/vrchat-community/vrc-oscquery-lib) — VRChat
 - [Microsoft Edge WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)
-
----
-
-## English summary
-
-**Meiji Chatbox Status** keeps a cute, always-on status in your VRChat chatbox over OSC: clock, now playing (Spotify/YouTube/any Windows media session) with a progress bar, AFK time, and avatar-parameter counters (e.g. headpat counter via a Contact Receiver). It uses OSCQuery so it never fights other OSC apps over port 9001, starts/stops with VRChat, lives in the tray, and has a pastel WebUI (Thai/English, 5 themes) with a live chatbox preview.
-
-1. Download `MeijiChatboxStatus.exe` from [Releases](https://github.com/finalsiren1/MeijiChatboxStatus/releases/latest) and run it (no install; if SmartScreen appears: *More info → Run anyway*).
-2. In VRChat: **Action Menu ▸ Options ▸ OSC ▸ Enabled**.
-3. Press **▶ Start**.
-
-Settings: `%APPDATA%\MeijiChatboxStatus\settings.json` · Log: `%LOCALAPPDATA%\MeijiChatboxStatus\app.log`

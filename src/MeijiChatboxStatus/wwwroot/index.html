@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="th" data-theme="sakura">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'">
+  <title>Meiji Chatbox Status</title>
+  <link rel="stylesheet" href="app.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="icon.png" alt="" width="40" height="40">
+      <div>
+        <h1>Meiji Chatbox Status</h1>
+        <small data-i18n="tagline">MCS · โชว์สถานะบน VRChat Chatbox ตลอดเวลา</small>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill" id="pill-vrc"><b class="dot"></b><span>VRChat</span></span>
+      <span class="pill" id="pill-osc"><b class="dot"></b><span>OSC</span></span>
+      <span class="saved" id="saved" data-i18n="saved">บันทึกแล้ว ✓</span>
+    </div>
+    <button class="btn-run" id="btn-run" type="button">
+      <span class="run-icon">▶</span><span class="run-label" data-i18n="start">เริ่มส่ง</span>
+    </button>
+  </header>
+
+  <main class="layout">
+    <aside class="side">
+      <section class="card preview-card">
+        <div class="card-head">
+          <h2 data-i18n="previewTitle">ตัวอย่างบน Chatbox</h2>
+          <span class="badge" id="live-badge" data-i18n="notSending">ยังไม่ได้ส่ง</span>
+        </div>
+        <div class="scene">
+          <div class="chatbox" id="preview"></div>        </div>
+        <div class="meters">
+          <div class="meter"><span data-i18n="chars">ตัวอักษร</span><b id="m-chars">0/144</b><i><u id="m-chars-bar"></u></i></div>
+          <div class="meter"><span data-i18n="lines">บรรทัด</span><b id="m-lines">0/9</b><i><u id="m-lines-bar"></u></i></div>
+        </div>
+      </section>
+
+      <section class="card np-card" id="np">
+        <div class="np-art" id="np-art"><span>🎵</span></div>
+        <div class="np-info">
+          <small id="np-source" data-i18n="nothingPlaying">ไม่มีเพลงเล่นอยู่</small>
+          <b id="np-title">—</b>
+          <span id="np-artist"></span>
+          <div class="np-bar"><u id="np-progress"></u></div>
+          <small class="np-time" id="np-time"></small>
+        </div>
+      </section>
+
+      <section class="card mini">
+        <div><span>😴</span><span id="afk-state" data-i18n="notAfk">ไม่ได้ AFK</span></div>
+        <div><span>💗</span><span id="last-trigger" data-i18n="noTrigger">ยังไม่มีใครแตะ</span></div>
+      </section>
+    </aside>
+
+    <section class="content">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="status" class="active"><span>💬</span><span data-i18n="tabStatus">ข้อความ</span></button>
+        <button role="tab" data-tab="music"><span>🎵</span><span data-i18n="tabMusic">เพลง</span></button>
+        <button role="tab" data-tab="afk"><span>😴</span><span data-i18n="tabAfk">AFK</span></button>
+        <button role="tab" data-tab="counters"><span>💗</span><span data-i18n="tabCounters">นับการแตะ</span></button>
+        <button role="tab" data-tab="settings"><span>⚙️</span><span data-i18n="tabSettings">ตั้งค่า</span></button>
+        <button role="tab" data-tab="log"><span>📜</span><span data-i18n="tabLog">บันทึก</span></button>
+      </nav>
+
+      <!-- ── Status pages ── -->
+      <div class="panel active" id="tab-status" role="tabpanel">
+        <div class="tip" id="tip-osc">
+          <span>💡</span>
+          <p data-i18n-html="tipOsc">อย่าลืมเปิด OSC ใน VRChat: <b>Action Menu ▸ Options ▸ OSC ▸ Enabled</b></p>
+          <button type="button" class="x" id="tip-osc-close" aria-label="close">×</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2 data-i18n="pagesTitle">ข้อความ Status</h2>
+            <button type="button" class="btn soft" id="add-page">＋ <span data-i18n="addPage">เพิ่มหน้า</span></button>
+          </div>
+          <p class="hint" data-i18n="pagesHint">ถ้ามีหลายหน้า จะสลับโชว์ทีละหน้าวนไปเรื่อย ๆ</p>
+          <div id="pages" class="pages"></div>
+          <label class="row" id="rotate-row">
+            <span data-i18n="rotateEvery">สลับหน้าทุก</span>
+            <input type="number" min="3" max="600" step="1" data-bind="chatbox.rotateSeconds" class="num">
+            <span data-i18n="seconds">วินาที</span>
+          </label>
+        </div>
+
+        <div class="card">
+          <h3 data-i18n="insertVar">แตะเพื่อแทรกตัวแปร</h3>
+          <div class="chips" id="chips-status"></div>
+          <h3 data-i18n="insertEmoji">อีโมจิน่ารัก ๆ</h3>
+          <div class="chips emoji" id="chips-emoji"></div>
+        </div>
+      </div>
+
+      <!-- ── Music ── -->
+      <div class="panel" id="tab-music" role="tabpanel">
+        <div class="card">
+          <div class="card-head">
+            <h2 data-i18n="musicTitle">เพลงที่กำลังเล่น</h2>
+            <label class="switch"><input type="checkbox" data-bind="media.enabled"><i></i></label>
+          </div>
+          <p class="hint" data-i18n-html="musicHint">ดึงเพลงจาก Spotify, YouTube และแอปอื่นที่แสดงบนแผงเพลงของ Windows ใส่ <code>{music}</code> ในหน้าข้อความเพื่อโชว์</p>
+          <textarea rows="3" data-bind="media.template" class="tpl" spellcheck="false"></textarea>
+          <div class="chips" id="chips-music"></div>
+          <label class="row"><span data-i18n="showPaused">โชว์เพลงตอนหยุดเล่นด้วย</span>
+            <span class="switch"><input type="checkbox" data-bind="media.showWhenPaused"><i></i></span></label>
+        </div>
+        <div class="card">
+          <h3 data-i18n="barStyle">สไตล์แถบเวลา</h3>
+          <div class="bar-styles" id="bar-styles"></div>
+          <label class="row"><span data-i18n="barWidth">ความยาวแถบ</span>
+            <input type="range" min="4" max="20" step="1" data-bind="media.barWidth"><b class="range-val" data-for="media.barWidth"></b></label>
+        </div>
+        <div class="card">
+          <h3 data-i18n="sourcesTitle">แหล่งเพลงที่โชว์ได้</h3>
+          <p class="hint" data-i18n-html="sourcesHint">โชว์เฉพาะแอปและเว็บเพลงเท่านั้น วิดีโอจาก TikTok, IG, Facebook หรือเว็บอื่น ๆ จะไม่ขึ้นบน Chatbox ถ้าเปิดในเบราว์เซอร์ ให้เปิดแท็บเพลงค้างไว้เป็นแท็บหลักของหน้าต่างนั้น</p>
+          <div class="chips sources" id="sources"></div>
+          <label class="field"><span data-i18n="extraSources">เพิ่มแอป/เว็บเพลงเอง (คั่นด้วย ,)</span>
+            <input type="text" data-bind="media.extraSources" spellcheck="false" data-i18n-ph="extraPh"></label>
+        </div>
+      </div>
+
+      <!-- ── AFK ── -->
+      <div class="panel" id="tab-afk" role="tabpanel">
+        <div class="card">
+          <div class="card-head">
+            <h2 data-i18n="afkTitle">ข้อความตอน AFK</h2>
+            <label class="switch"><input type="checkbox" data-bind="afk.enabled"><i></i></label>
+          </div>
+          <p class="hint" data-i18n-html="afkHint">VRChat จะบอกแอปเองเมื่อคุณ AFK (ถอดแว่น/สลับหน้าต่าง) ใส่ <code>{afk}</code> ในหน้าข้อความเพื่อโชว์</p>
+          <textarea rows="2" data-bind="afk.template" class="tpl" spellcheck="false"></textarea>
+          <div class="chips" id="chips-afk"></div>
+        </div>
+      </div>
+
+      <!-- ── Counters ── -->
+      <div class="panel" id="tab-counters" role="tabpanel">
+        <div class="card">
+          <div class="card-head">
+            <h2 data-i18n="countersTitle">นับการแตะ / Parameter</h2>
+            <div class="btns">
+              <button type="button" class="btn ghost" id="reset-all" data-i18n="resetAll">รีเซ็ตทั้งหมด</button>
+              <button type="button" class="btn soft" id="add-counter">＋ <span data-i18n="addCounter">เพิ่มตัวนับ</span></button>
+            </div>
+          </div>
+          <p class="hint" data-i18n-html="countersHint">เมื่อ Avatar Parameter (เช่น Contact Receiver) ทำงาน จะนับ +1 แล้วโชว์ข้อความแทรกชั่วคราว ใช้ <code>{count}</code> แทนจำนวนครั้ง และใช้ <code>{count:ชื่อParameter}</code> ในหน้าข้อความได้ด้วย</p>
+          <div id="counters" class="counters"></div>
+          <p class="empty" id="counters-empty" data-i18n="noCounters">ยังไม่มีตัวนับ ลองกด “เพิ่มตัวนับ” ดูนะ ♡</p>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3 data-i18n="seenParams">Parameter ที่ได้รับล่าสุด</h3>
+            <button type="button" class="btn ghost" id="refresh-params">↻ <span data-i18n="refresh">รีเฟรช</span></button>
+          </div>
+          <p class="hint" data-i18n="seenHint">เข้า VRChat แล้วลองให้คนแตะ Avatar ชื่อ Parameter จะโผล่ตรงนี้ แตะเพื่อเพิ่มเป็นตัวนับ</p>
+          <div class="chips params" id="params"></div>
+        </div>
+      </div>
+
+      <!-- ── Settings ── -->
+      <div class="panel" id="tab-settings" role="tabpanel">
+        <div class="card">
+          <h2 data-i18n="appearance">หน้าตา</h2>
+          <div class="row"><span data-i18n="language">ภาษา</span>
+            <div class="seg" id="lang-seg"><button type="button" data-lang="th">ไทย</button><button type="button" data-lang="en">English</button></div>
+          </div>
+          <div class="row"><span data-i18n="theme">ธีม</span><div class="swatches" id="themes"></div></div>
+        </div>
+
+        <div class="card">
+          <h2 data-i18n="behavior">การทำงาน</h2>
+          <label class="row"><span class="opt"><b data-i18n="autoWithVrc">เปิดโปรแกรมเองเมื่อเปิด VRChat</b>
+              <em data-i18n="autoWithVrcHint">เปิด VRChat แล้วเริ่มส่ง Status ให้เลย ปิด VRChat ก็หยุดส่งและล้าง Chatbox (โปรแกรมจะรอเงียบ ๆ ที่ถาดไอคอนตั้งแต่เปิดเครื่อง)</em></span>
+            <span class="switch"><input type="checkbox" data-bind="behavior.autoWithVrc"><i></i></span></label>
+          <label class="row" id="close-with-vrc-row"><span class="opt"><b data-i18n="closeWithVrc">ปิดโปรแกรมเมื่อปิด VRChat</b>
+              <em data-i18n="closeWithVrcHint">ใช้ได้เมื่อปิดตัวเลือกด้านบน</em></span>
+            <span class="switch"><input type="checkbox" data-bind="behavior.closeWithVrc"><i></i></span></label>
+          <div class="row"><span data-i18n="closeAction">เมื่อกดปิดหน้าต่าง (X)</span>
+            <div class="seg" id="close-seg">
+              <button type="button" data-close="ask" data-i18n="closeAsk">ถามทุกครั้ง</button>
+              <button type="button" data-close="tray" data-i18n="closeTray">ซ่อนไว้ที่ถาด</button>
+              <button type="button" data-close="exit" data-i18n="closeExit">ปิดโปรแกรม</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 data-i18n="advanced">ขั้นสูง</h2>
+          <div class="tip warn">
+            <span>⚠️</span>
+            <p data-i18n-html="advancedHint"><b>ถ้าใช้งานได้ปกติอยู่แล้ว ไม่ต้องแก้ส่วนนี้</b> — สำหรับคนที่เข้าใจ OSC หรือใช้แอป OSC หลายตัวพร้อมกัน ถ้าแก้แล้วมีปัญหา ให้กลับไปใช้ค่าเดิม: เปิด OSCQuery, IP 127.0.0.1, พอร์ตส่ง 9000, พอร์ตรับ 9001, อัปเดตทุก 2s</p>
+          </div>
+          <label class="row"><span data-i18n="interval">อัปเดตทุก</span>
+            <input type="range" min="1.5" max="10" step="0.5" data-bind="chatbox.intervalSeconds"><b class="range-val" data-for="chatbox.intervalSeconds" data-suffix="s"></b></label>
+          <label class="row"><span data-i18n-html="useOscQuery">ใช้ OSCQuery <em>(แนะนำ — ไม่ชนกับแอป OSC อื่น)</em></span>
+            <span class="switch"><input type="checkbox" data-bind="osc.useOscQuery"><i></i></span></label>
+          <div class="grid3">
+            <label><span data-i18n="ip">IP ของ VRChat</span><input type="text" data-bind="osc.ip" spellcheck="false"></label>
+            <label><span data-i18n="sendPort">พอร์ตส่ง</span><input type="number" min="1" max="65535" data-bind="osc.sendPort"></label>
+            <label><span data-i18n="listenPort">พอร์ตรับ</span><input type="number" min="1" max="65535" data-bind="osc.listenPort" id="listen-port"></label>
+          </div>
+          <p class="hint" id="osc-status"></p>
+        </div>
+
+        <div class="card about">
+          <img src="icon.png" alt="" width="56" height="56">
+          <div>
+            <b>Meiji Chatbox Status <span id="version"></span></b>
+            <p class="hint" data-i18n="aboutText">ฟรีและโอเพนซอร์ส (MIT) แชร์ให้เพื่อนใช้ได้เลย ♡</p>
+            <div class="btns">
+              <button type="button" class="btn ghost" id="open-data" data-i18n="openData">เปิดโฟลเดอร์ตั้งค่า</button>
+              <button type="button" class="btn ghost" id="open-docs" data-i18n="oscDocs">คู่มือ OSC ของ VRChat</button>
+              <button type="button" class="btn ghost danger" id="exit-app" data-i18n="exitApp">ออกจากแอป</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Log ── -->
+      <div class="panel" id="tab-log" role="tabpanel">
+        <div class="card">
+          <h2 data-i18n="logTitle">บันทึกการทำงาน</h2>
+          <ol class="log" id="log"></ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="tpl-page">
+    <div class="page">
+      <div class="page-head">
+        <span class="switch sm"><input type="checkbox" class="p-enabled"><i></i></span>
+        <b class="p-title"></b>
+        <small class="p-len"></small>
+        <button type="button" class="icon-btn p-up" aria-label="up">↑</button>
+        <button type="button" class="btn ghost danger p-del">ลบหน้า</button>
+      </div>
+      <textarea rows="4" class="tpl p-text" spellcheck="false"></textarea>
+    </div>
+  </template>
+
+  <template id="tpl-counter">
+    <div class="counter">
+      <span class="switch sm"><input type="checkbox" class="c-enabled"><i></i></span>
+      <input type="text" class="c-param" list="param-list" spellcheck="false">
+      <input type="text" class="c-msg" spellcheck="false">
+      <label class="c-secs"><input type="number" min="1" max="30" step="0.5" class="num"><span>s</span></label>
+      <b class="c-count">0</b>
+      <div class="c-actions">
+        <button type="button" class="icon-btn c-test" aria-label="test">✨</button>
+        <button type="button" class="icon-btn c-reset" aria-label="reset">↺</button>
+        <button type="button" class="btn ghost danger c-del">ลบ</button>
+      </div>
+    </div>
+  </template>
+  <datalist id="param-list"></datalist>
+
+  <div class="modal-backdrop" id="close-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="close-title">
+      <h2 id="close-title" data-i18n="closeTitle">จะปิดโปรแกรม หรือซ่อนไว้?</h2>
+      <p class="hint" data-i18n="closeText">ถ้าซ่อนไว้ แอปจะทำงานต่อที่ถาดไอคอนมุมขวาล่าง และยังส่ง Status ได้ตามปกติ ถ้าปิดโปรแกรม จะล้างข้อความบน Chatbox ให้ด้วย</p>
+      <label class="check"><input type="checkbox" id="close-remember"><span data-i18n="dontAsk">จำตัวเลือกนี้ ไม่ต้องถามอีก (เปลี่ยนได้ในตั้งค่า)</span></label>
+      <div class="modal-btns">
+        <button type="button" class="btn ghost" id="close-cancel" data-i18n="cancel">ยกเลิก</button>
+        <button type="button" class="btn ghost danger" id="close-exit" data-i18n="closeExit">ปิดโปรแกรม</button>
+        <button type="button" class="btn primary" id="close-tray" data-i18n="closeTrayBtn">ซ่อนไว้ที่ถาดไอคอน</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>

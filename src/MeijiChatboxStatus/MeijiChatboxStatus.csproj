@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <RootNamespace>MeijiChatboxStatus</RootNamespace>
+    <AssemblyName>MeijiChatboxStatus</AssemblyName>
+    <Product>Meiji Chatbox Status</Product>
+    <Version>2.0.0</Version>
+    <Copyright>MIT License</Copyright>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <!-- contentFiles are only the OSCQuery web explorer page, which this app doesn't need -->
+    <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" ExcludeAssets="contentFiles" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WebUI is embedded into the exe and served from memory (no files on disk, works offline) -->
+    <EmbeddedResource Include="wwwroot\**\*" LogicalName="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Assets\app.ico" LogicalName="app.ico" />
+  </ItemGroup>
+
+  <!-- The WebView2 package always references its WPF control too; this app only uses WinForms. -->
+  <Target Name="RemoveWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
+
+</Project>

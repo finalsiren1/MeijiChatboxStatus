@@ -48,6 +48,14 @@ const I18N = {
     vrcOn: 'VRChat เปิดอยู่', vrcOff: 'ยังไม่เจอ VRChat',
     aboutText: 'ฟรีและโอเพนซอร์ส (MIT) แชร์ให้เพื่อนใช้ได้เลย ♡', openData: 'เปิดโฟลเดอร์ตั้งค่า', oscDocs: 'คู่มือ OSC ของ VRChat', exitApp: 'ออกจากแอป',
     logTitle: 'บันทึกการทำงาน',
+    setupTitleNew: 'ติดตั้ง Meiji Chatbox Status', setupTitleUpdate: 'อัปเดต Meiji Chatbox Status',
+    setupIntro: 'โปรแกรมจะติดตั้งลงเครื่อง สร้างทางลัดที่ Start Menu และหน้าจอ แล้วลบเวอร์ชันเก่าที่เจอด้านล่างทั้งหมด การตั้งค่าและตัวนับเดิมจะถูกเก็บไว้',
+    setupScanning: 'กำลังค้นหาเวอร์ชันเก่าในเครื่อง…', setupFound: 'เจอของเก่า {0} รายการ — จะลบทั้งหมด', setupNone: 'ไม่เจอเวอร์ชันเก่าในเครื่อง ✓',
+    setupWhere: 'ติดตั้งที่', setupInstall: 'ติดตั้ง', setupUpdate: 'อัปเดต', setupError: 'ติดตั้งไม่สำเร็จ: {0}',
+    step_closing: 'กำลังปิดโปรแกรมเก่า…', step_importing: 'กำลังนำเข้าการตั้งค่าเดิม…', step_removing: 'กำลังลบเวอร์ชันเก่า…',
+    step_copying: 'กำลังติดตั้ง…', step_shortcuts: 'กำลังสร้างทางลัด…', step_done: 'เสร็จแล้ว! กำลังเปิดโปรแกรม ♡',
+    kind_process: 'โปรแกรมเก่าที่เปิดอยู่ (จะปิดให้)', kind_folder: 'โฟลเดอร์โปรแกรมเก่า', kind_app: 'ไฟล์โปรแกรมเก่า', kind_file: 'ไฟล์เก่า',
+    kind_settings: 'ไฟล์ตั้งค่าเก่า (นำเข้าก่อนลบ)', kind_shortcut: 'ทางลัดเก่า', kind_autorun: 'รายการเปิดอัตโนมัติเก่า', kind_data: 'ข้อมูลเก่า',
     v_time: 'เวลา', v_time12: 'เวลา 12 ชม.', v_date: 'วันที่', v_day: 'วัน', v_music: 'เพลง', v_afk: 'AFK',
     v_session: 'เวลาที่ออนไลน์', v_count: 'จำนวนนับ', v_title: 'ชื่อเพลง', v_artist: 'ศิลปิน', v_bar: 'แถบเวลา',
     v_pos: 'เวลาปัจจุบัน', v_dur: 'ความยาวเพลง', v_icon: '▶/⏸', v_source: 'แอปที่เล่น', v_afktime: 'AFK มานาน',
@@ -100,6 +108,14 @@ const I18N = {
     vrcOn: 'VRChat is running', vrcOff: 'VRChat not found',
     aboutText: 'Free & open source (MIT) — share it with your friends ♡', openData: 'Open settings folder', oscDocs: 'VRChat OSC guide', exitApp: 'Exit app',
     logTitle: 'Activity log',
+    setupTitleNew: 'Install Meiji Chatbox Status', setupTitleUpdate: 'Update Meiji Chatbox Status',
+    setupIntro: 'The app will be installed for your account with Start Menu and desktop shortcuts, and every older version listed below will be removed. Your existing settings and counters are kept.',
+    setupScanning: 'Looking for older versions…', setupFound: 'Found {0} old item(s) — all will be removed', setupNone: 'No older versions found ✓',
+    setupWhere: 'Install location', setupInstall: 'Install', setupUpdate: 'Update', setupError: 'Installation failed: {0}',
+    step_closing: 'Closing old versions…', step_importing: 'Importing your old settings…', step_removing: 'Removing old versions…',
+    step_copying: 'Installing…', step_shortcuts: 'Creating shortcuts…', step_done: 'Done! Opening the app ♡',
+    kind_process: 'Running old app (will be closed)', kind_folder: 'Old app folder', kind_app: 'Old app files', kind_file: 'Old file',
+    kind_settings: 'Old settings file (imported first)', kind_shortcut: 'Old shortcut', kind_autorun: 'Old startup entry', kind_data: 'Old app data',
     v_time: 'time', v_time12: '12h time', v_date: 'date', v_day: 'weekday', v_music: 'music', v_afk: 'AFK',
     v_session: 'time online', v_count: 'counter', v_title: 'title', v_artist: 'artist', v_bar: 'progress bar',
     v_pos: 'position', v_dur: 'length', v_icon: '▶/⏸', v_source: 'player app', v_afktime: 'AFK duration',
@@ -181,7 +197,49 @@ function onMessage(msg) {
     case 'log': addLog(msg.entry); break;
     case 'params': renderParams(msg.list); break;
     case 'askClose': openCloseModal(); break;
+    case 'setup': showSetup(msg); break;
+    case 'setupScan': renderSetupScan(msg.items); break;
+    case 'setupStep': setupStatus(t('step_' + msg.step)); break;
+    case 'setupError':
+      setupStatus(fmt(t('setupError'), msg.message), true);
+      $('#setup-install').disabled = false;
+      break;
   }
+}
+
+/* ── install / update screen ── */
+let setupInfo = null;
+
+function showSetup(info) {
+  setupInfo = info;
+  lang = info.lang;
+  document.body.classList.add('setup-mode');
+  $('#setup').hidden = false;
+  $('#setup-version').textContent = 'v' + info.version;
+  $('#setup-dir').textContent = info.installDir;
+  applySetupLang();
+  setupStatus('');
+}
+
+function applySetupLang() {
+  $$('#setup [data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+  $('#setup-title').textContent = t(setupInfo.update ? 'setupTitleUpdate' : 'setupTitleNew');
+  $('#setup-install').textContent = t(setupInfo.update ? 'setupUpdate' : 'setupInstall');
+  if (!setupInfo.items) $('#setup-scan').textContent = t('setupScanning');
+}
+
+function renderSetupScan(items) {
+  setupInfo.items = items;
+  $('#setup-scan').textContent = items.length ? fmt(t('setupFound'), items.length) : t('setupNone');
+  $('#setup-items').replaceChildren(...items.map(i =>
+    el('li', {}, el('span', { class: 'kind' }, t('kind_' + i.kind)), el('code', { title: i.path }, i.path))));
+  $('#setup-install').disabled = false;
+}
+
+function setupStatus(text, isError = false) {
+  const box = $('#setup-status');
+  box.textContent = text;
+  box.classList.toggle('error', isError);
 }
 
 function scheduleSave() {
@@ -570,6 +628,12 @@ function wireEvents() {
     setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = t('resetAll'); } }, 3000);
   });
   $('#refresh-params').addEventListener('click', () => send('getParams'));
+  $('#setup-install').addEventListener('click', () => {
+    $('#setup-install').disabled = true;
+    $('#setup-cancel').disabled = true;
+    send('install');
+  });
+  $('#setup-cancel').addEventListener('click', () => send('cancelSetup'));
   $$('#close-seg button').forEach(b => b.addEventListener('click', () => {
     S.behavior.closeAction = b.dataset.close;
     renderCloseSeg(); scheduleSave();
@@ -596,6 +660,18 @@ function wireEvents() {
 /* ════════════════════════ browser-only mock (for designing the UI without the app) ════════════════════════ */
 const Mock = {
   handle(msg) {
+    if (msg.type === 'ready' && location.hash === '#setup') {
+      setTimeout(() => {
+        onMessage({ type: 'setup', lang: 'th', version: 'dev', installDir: 'C:\\Users\\you\\AppData\\Local\\Programs\\MeijiChatboxStatus', update: false });
+        onMessage({ type: 'setupScan', items: [
+          { kind: 'process', path: 'C:\\Users\\you\\Desktop\\VRC\\VrcAfkNative.exe' },
+          { kind: 'folder', path: 'C:\\Users\\you\\Desktop\\VRC' },
+          { kind: 'file', path: 'C:\\Users\\you\\Downloads\\VrcAfkNative.zip' },
+          { kind: 'shortcut', path: 'C:\\Users\\you\\Desktop\\VrcAfkNative.lnk' },
+        ] });
+      });
+      return;
+    }
     if (msg.type === 'ready') {
       const settings = {
         version: 1, language: 'th', theme: 'sakura',

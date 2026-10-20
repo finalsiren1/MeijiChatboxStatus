@@ -265,6 +265,28 @@
   </template>
   <datalist id="param-list"></datalist>
 
+  <!-- Install / update screen (shown only when running the downloaded exe) -->
+  <section class="setup" id="setup" hidden>
+    <div class="setup-card">
+      <div class="setup-head">
+        <img src="icon.png" alt="" width="56" height="56">
+        <div><h1>Meiji Chatbox Status</h1><small id="setup-version"></small></div>
+      </div>
+      <h2 id="setup-title"></h2>
+      <p class="hint" data-i18n="setupIntro"></p>
+      <div class="setup-box">
+        <b id="setup-scan"></b>
+        <ul class="setup-items" id="setup-items"></ul>
+      </div>
+      <p class="hint"><span data-i18n="setupWhere"></span> <code id="setup-dir"></code></p>
+      <p class="setup-status" id="setup-status" role="status"></p>
+      <div class="modal-btns">
+        <button type="button" class="btn ghost" id="setup-cancel" data-i18n="cancel"></button>
+        <button type="button" class="btn primary" id="setup-install" disabled></button>
+      </div>
+    </div>
+  </section>
+
   <div class="modal-backdrop" id="close-modal" hidden>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="close-title">
       <h2 id="close-title" data-i18n="closeTitle">จะปิดโปรแกรม หรือซ่อนไว้?</h2>

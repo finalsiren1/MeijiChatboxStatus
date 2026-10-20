@@ -20,10 +20,15 @@ Everything is sent over OSC, so your avatar needs no changes (except for touch c
 
 ## 🚀 Getting started
 
-1. Download `MeijiChatboxStatus.exe` from [**Releases**](https://github.com/finalsiren1/MeijiChatboxStatus/releases/latest) and double-click it (no install needed).
+1. Download `MeijiChatboxStatus.exe` from [**Releases**](https://github.com/finalsiren1/MeijiChatboxStatus/releases/latest) and double-click it.
    - If Windows shows *"Windows protected your PC"*, click **More info → Run anyway** (the file simply isn't code-signed).
-2. In VRChat, enable OSC: **Action Menu ▸ Options ▸ OSC ▸ Enabled**.
-3. Press **▶ Start** (or just let it start when VRChat opens) — done! ♡
+2. The setup screen quickly looks for **older versions** on your PC (the old `VrcAfkNative` app, leftover copies, shortcuts and startup entries)
+   and lists what it found. Click **Install** — old versions are removed, their settings and counters are imported, and the app is installed
+   for your account (no admin rights needed) with Start Menu and desktop shortcuts. Running the downloaded exe again later updates it the same way.
+3. In VRChat, enable OSC: **Action Menu ▸ Options ▸ OSC ▸ Enabled**.
+4. Press **▶ Start** (or just let it start when VRChat opens) — done! ♡
+
+To uninstall, use **Windows Settings ▸ Apps ▸ Installed apps ▸ Meiji Chatbox Status** (you'll be asked whether to keep your settings).
 
 The interface opens in Thai; switch to English in **Settings ▸ Appearance ▸ Language**.
 
@@ -74,11 +79,14 @@ Messages are limited to VRChat's 144 characters / 9 lines without ever cutting a
 
 | | |
 |---|---|
+| Program | `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\` |
 | Settings | `%APPDATA%\MeijiChatboxStatus\settings.json` (copy it to move your setup to another PC) |
 | Log + WebView2 cache | `%LOCALAPPDATA%\MeijiChatboxStatus\` |
 | Open with VRChat | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `MeijiChatboxStatus` |
 
-Coming from the old version (VrcAfkNative)? Put `vrc_afk_settings.txt` next to the exe before the first run and your message and counters are imported automatically.
+The old version's `vrc_afk_settings.txt` is imported automatically when it's found during setup.
+
+Command line (for scripts): `MeijiChatboxStatus.exe --install` installs/updates without the setup screen; `--uninstall` uninstalls.
 
 ## 🛠️ Building from source
 
@@ -106,6 +114,7 @@ src/MeijiChatboxStatus/
     Settings.cs        JSON settings + import from the old version
     ChatboxGuard.cs    clears the chatbox however the app exits
     Autorun.cs         "open with VRChat" (Windows startup entry)
+    Installer.cs       per-user install/update/uninstall + quick scan for old versions
   wwwroot/             WebUI (plain HTML/CSS/JS, embedded in the exe, works offline)
 tests/MeijiChatboxStatus.Tests/
 tools/

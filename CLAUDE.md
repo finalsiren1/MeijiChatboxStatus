@@ -26,6 +26,10 @@
 - Commands: `dotnet run --project src\MeijiChatboxStatus`, `dotnet test tests\MeijiChatboxStatus.Tests`, `.\publish.ps1 [-Lite]` → `dist\`.
 - Every way of exiting must clear the chatbox: normal exit → `OnFormClosing`, crash → handlers in `Program`,
   End task → the `--guard <pid>` process (`ChatboxGuard`).
+- Install model: any copy that isn't `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\MeijiChatboxStatus.exe` runs in **setup mode**
+  (WebUI install screen, no OSC/services): quick depth-limited scan for old versions (`Installer.Scan`), import old settings, delete old items,
+  copy itself, shortcuts, HKCU Uninstall entry, then launch the installed copy. Debug builds always count as installed.
+  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version stays 2.0.0 until the user says otherwise.
 - `--tray` = start hidden (used by the HKCU Run entry from `Autorun`, registered in Release builds only); WebView2 loads only when the window is first shown.
 - Advanced settings must carry a hint saying "if it already works, don't touch this".
 - Testing without disturbing the game: change `sendPort` in settings.json to another port and listen on UDP (change it back to 9000 afterwards).

@@ -26,13 +26,30 @@ internal static class Program
             ChatboxGuard.RunGuard(parentId);
             return;
         }
+        if (args.Contains(Installer.InstallArg) && !Installer.RunningInstalled)
+        {
+            // Unattended install/update: same steps as the Install button, then open the installed app.
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            var log = new Logger();
+            string exe = Installer.Install(Installer.Scan(cts.Token), log, step => log.Info($"install: {step}"));
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Installer.InstallDir })?.Dispose();
+            return;
+        }
+        if (args.Contains(Installer.UninstallArg))
+        {
+            ApplicationConfiguration.Initialize();
+            RunUninstall();
+            return;
+        }
         bool startHidden = args.Contains(Autorun.TrayArg);
+        // Any copy that isn't the installed one (e.g. the downloaded exe) acts as the installer/updater.
+        bool setupMode = !Installer.RunningInstalled;
 
-        using var mutex = new Mutex(true, MutexName, out bool isFirst);
+        using var mutex = new Mutex(true, setupMode ? MutexName + ".Setup" : MutexName, out bool isFirst);
         if (!isFirst)
         {
             // Already running (maybe hidden in the tray): ask that instance to show itself.
-            if (startHidden) return;
+            if (startHidden || setupMode) return;
             try { using var ev = EventWaitHandle.OpenExisting(ShowEventName); ev.Set(); }
             catch (WaitHandleCannotBeOpenedException) { }
             return;
@@ -45,8 +62,23 @@ internal static class Program
 
         if (!HasWebView2Runtime()) return;
 
-        using var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
-        Application.Run(new MainForm(showEvent, startHidden));
+        using var showEvent = setupMode
+            ? new EventWaitHandle(false, EventResetMode.AutoReset)
+            : new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+        Application.Run(new MainForm(showEvent, startHidden && !setupMode, setupMode));
+    }
+
+    private static void RunUninstall()
+    {
+        const string title = "Meiji Chatbox Status";
+        if (MessageBox.Show("ถอนการติดตั้ง Meiji Chatbox Status ใช่ไหม?\nUninstall Meiji Chatbox Status?",
+                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK) return;
+        bool removeSettings = MessageBox.Show(
+            "ลบการตั้งค่าและตัวนับด้วยไหม? (กด No เพื่อเก็บไว้ ถ้าจะติดตั้งใหม่ภายหลัง)\nAlso delete your settings and counters? (No keeps them for a later reinstall)",
+            title, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+        Installer.Uninstall(removeSettings);
+        MessageBox.Show("ถอนการติดตั้งเรียบร้อยแล้ว\nMeiji Chatbox Status has been uninstalled.", title,
+            MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     /// <summary>Last resort: clear the chatbox, tell the user, and quit instead of leaving a stale status behind.</summary>

@@ -14,7 +14,7 @@ const keysOf = (src) => new Set([...src.matchAll(/(?:^|[\s,{])([a-zA-Z_][\w]*):\
 const th = keysOf(block('th')), en = keysOf(block('en'));
 const dictEnd = js.indexOf('const STATUS_VARS');
 const code = js.slice(dictEnd) + html;
-const dynamicPrefixes = ['v_', 'bar_', 'th_'];
+const dynamicPrefixes = ['v_', 'bar_', 'th_', 'kind_', 'step_'];
 const unused = [...th].filter(k => !dynamicPrefixes.some(p => k.startsWith(p)) &&
   !new RegExp(`(['"\`])${k}\\1|data-i18n(?:-html|-ph)?="${k}"`).test(code));
 console.log('unused i18n:', unused.join(', ') || '(none)');

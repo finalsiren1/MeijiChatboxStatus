@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -36,13 +37,17 @@ public sealed class MainForm : Form
     private AppSettings _settings;
     private CoreWebView2Environment? _env;
     private bool _webReady, _exiting, _countsDirty, _trayHintShown, _startHidden, _servicesStarted;
+    /// <summary>Running from a downloaded copy: the window only shows the install/update screen, nothing is sent.</summary>
+    private readonly bool _setupMode;
+    private List<OldItem>? _oldItems;
     private int _tick;
     private string _lastState = "";
     private string? _lastArt;
 
-    public MainForm(EventWaitHandle showEvent, bool startHidden)
+    public MainForm(EventWaitHandle showEvent, bool startHidden, bool setupMode)
     {
         _startHidden = startHidden;
+        _setupMode = setupMode;
         _version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion.Split('+')[0] ?? "2.0.0";
         _resources = Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -57,7 +62,7 @@ public sealed class MainForm : Form
 
         _settings = _store.Load(_log);
         _osc = new OscService(_log);
-        _osc.Configure(_settings.Osc);
+        if (!_setupMode) _osc.Configure(_settings.Osc);
         _media = new MediaWatcher(_log) { ExtraSources = _settings.Media.ExtraSources };
         _engine = new StatusEngine(_settings, _osc, _media, _log);
         _engine.CountsChanged += () => _countsDirty = true;
@@ -75,7 +80,7 @@ public sealed class MainForm : Form
         {
             Icon = Icon,
             Text = "Meiji Chatbox Status",
-            Visible = true,
+            Visible = !_setupMode,
             ContextMenuStrip = new ContextMenuStrip { Items = { _trayOpen, _trayToggle, new ToolStripSeparator(), _trayExit } },
         };
         _tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) ShowFromTray(); };
@@ -103,7 +108,7 @@ public sealed class MainForm : Form
     protected override async void OnHandleCreated(EventArgs e)
     {
         base.OnHandleCreated(e);
-        if (_servicesStarted) return;
+        if (_servicesStarted || _setupMode) return;
         _servicesStarted = true;
 
         ChatboxGuard.Launch(_log);
@@ -213,6 +218,12 @@ public sealed class MainForm : Form
 
             switch (msg.GetProperty("type").GetString())
             {
+                case "ready" when _setupMode:
+                    _webReady = true;
+                    StartSetupScan();
+                    break;
+                case "install": RunInstall(); break;
+                case "cancelSetup": _exiting = true; Close(); break;
                 case "ready":
                     _webReady = true;
                     _lastState = ""; _lastArt = null;
@@ -249,6 +260,41 @@ public sealed class MainForm : Form
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
         {
             _log.Error($"ข้อความจาก UI ไม่ถูกต้อง: {ex.Message}");
+        }
+    }
+
+    // ───────────────────────────── Install / update ─────────────────────────────
+
+    private async void StartSetupScan()
+    {
+        bool th = File.Exists(SettingsStore.SettingsFile)
+            ? _settings.Language == "th"
+            : CultureInfo.InstalledUICulture.TwoLetterISOLanguageName == "th";
+        Post(new { type = "setup", lang = th ? "th" : "en", version = _version, installDir = Installer.InstallDir, update = Installer.IsInstalled });
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+        _oldItems = await Task.Run(() => Installer.Scan(cts.Token));
+        Post(new { type = "setupScan", items = _oldItems.Select(i => new { kind = i.Kind, path = i.Path }) });
+    }
+
+    private async void RunInstall()
+    {
+        if (_oldItems is null) return;
+        try
+        {
+            var items = _oldItems;
+            string exe = await Task.Run(() => Installer.Install(items, _log,
+                step => BeginInvoke(() => Post(new { type = "setupStep", step }))));
+            Post(new { type = "setupStep", step = "done" });
+            await Task.Delay(1200);
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Installer.InstallDir })?.Dispose();
+            _exiting = true;
+            Close();
+        }
+        catch (Exception e)
+        {
+            _log.Error($"ติดตั้งไม่สำเร็จ: {e.Message}");
+            Post(new { type = "setupError", message = e.Message });
         }
     }
 
@@ -429,6 +475,13 @@ public sealed class MainForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
+        if (_setupMode)
+        {
+            _tray.Visible = false;
+            base.OnFormClosing(e);
+            return;
+        }
+
         // X button / Alt+F4 / taskbar "Close window": ask (popup in the WebUI), hide, or exit as the user chose.
         if (!_exiting && e.CloseReason == CloseReason.UserClosing && _settings.Behavior.CloseAction != "exit")
         {

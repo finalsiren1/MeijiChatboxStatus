@@ -184,30 +184,32 @@ public sealed class SettingsStore
     }
 }
 
-/// <summary>Imports the line-based settings file of the old VrcAfkNative app, if it sits next to the exe.</summary>
+/// <summary>Imports the line-based settings file of the old VrcAfkNative app.</summary>
 internal static class LegacyImport
 {
-    public static AppSettings? TryImport(Logger log)
-    {
-        foreach (var dir in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
-        {
-            string path = Path.Combine(dir, "vrc_afk_settings.txt");
-            if (!File.Exists(path)) continue;
-            var lines = File.ReadAllLines(path);
-            if (lines.Length < 12) continue;
+    /// <summary>Looks next to the exe / in the working directory (portable use).</summary>
+    public static AppSettings? TryImport(Logger log) =>
+        new[] { AppContext.BaseDirectory, Environment.CurrentDirectory }
+            .Select(dir => Path.Combine(dir, "vrc_afk_settings.txt"))
+            .Where(File.Exists)
+            .Select(path => FromFile(path, log))
+            .FirstOrDefault(s => s is not null);
 
-            var s = new AppSettings();
-            s.Pages = [new() { Text = (lines[0].Trim() + "\n{music}").Trim() }];
-            s.Media.Enabled = bool.TryParse(lines[1], out var m) && m;
-            for (int i = 0; i < 5; i++)
-            {
-                string param = lines[2 + i * 2].Trim();
-                if (param.Length == 0) continue;
-                s.Counters.Add(new CounterRule { Parameter = param, Message = lines[3 + i * 2].Trim().Replace("{0}", "{count}") });
-            }
-            log.Info($"นำเข้าการตั้งค่าจากแอปเวอร์ชันเก่า ({path}) แล้ว");
-            return s;
+    public static AppSettings? FromFile(string path, Logger log)
+    {
+        var lines = File.ReadAllLines(path);
+        if (lines.Length < 12) return null;
+
+        var s = new AppSettings();
+        s.Pages = [new() { Text = (lines[0].Trim() + "\n{music}").Trim() }];
+        s.Media.Enabled = bool.TryParse(lines[1], out var m) && m;
+        for (int i = 0; i < 5; i++)
+        {
+            string param = lines[2 + i * 2].Trim();
+            if (param.Length == 0) continue;
+            s.Counters.Add(new CounterRule { Parameter = param, Message = lines[3 + i * 2].Trim().Replace("{0}", "{count}") });
         }
-        return null;
+        log.Info($"นำเข้าการตั้งค่าจากแอปเวอร์ชันเก่า ({path}) แล้ว");
+        return s;
     }
 }

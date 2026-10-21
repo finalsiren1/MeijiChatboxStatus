@@ -1,15 +1,18 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Windows.Automation;
 
 namespace MeijiChatboxStatus.Core;
 
 /// <summary>
 /// Decides whether a media session is music worth showing. Windows only says *which app* is playing, so:
-/// music apps are matched by app id, and browsers are matched by finding a browser window whose title (the active tab)
-/// contains the track title together with an allowed site name. Anything unproven is hidden — TikTok, IG, Facebook,
+/// music apps are matched by app id, and browsers are matched by finding a browser tab whose title contains the track title
+/// together with an allowed site name (window titles cover the active tabs; <see cref="BrowserTabTitles"/> covers the rest). Anything unproven is hidden — TikTok, IG, Facebook,
 /// random sites and NSFW never reach the chatbox.
 /// </summary>
-public static class MediaFilter
+public static partial class MediaFilter
 {
     /// <summary>Music players, matched against the session's app id (case-insensitive substring).</summary>
     public static readonly string[] MusicApps =
@@ -72,6 +75,37 @@ public static class MediaFilter
         return false;
     }
 
+    // Chromium browsers (Chrome, Edge, ...) append this to the accessible name of a tab that is making sound (English UI).
+    private static readonly string[] AudioMarkers = [" - Audio playing", " - Playing audio"];
+    [GeneratedRegex(@"^\(\d+\+?\)\s*")]
+    private static partial Regex NotificationCountRegex();
+
+    /// <summary>
+    /// Chrome hands Windows only one media session per browser, often not the tab playing music (e.g. a paused video elsewhere).
+    /// This finds a tab that is audibly playing on a music site and returns its track title (site name and markers removed),
+    /// or null. The tab title must end in " - Site" right before the marker, so only allowed sites pass.
+    /// </summary>
+    public static string? PlayingMusicTab(IEnumerable<string> tabTitles, string? extra)
+    {
+        var sites = MusicSites.Concat(ParseExtra(extra)).ToList();
+        foreach (string tab in tabTitles)
+        {
+            int marker = AudioMarkers.Select(m => tab.IndexOf(m, StringComparison.OrdinalIgnoreCase)).Where(i => i > 0).DefaultIfEmpty(-1).Min();
+            if (marker < 0) continue;
+            string head = tab[..marker];
+            foreach (string site in sites)
+            {
+                foreach (string sep in new[] { " - ", " – ", " — ", " | ", " · " })
+                {
+                    if (!head.EndsWith(sep + site, StringComparison.OrdinalIgnoreCase)) continue;
+                    string title = NotificationCountRegex().Replace(head[..^(sep.Length + site.Length)], "").Trim();
+                    if (title.Length > 0) return title;
+                }
+            }
+        }
+        return null;
+    }
+
     /// <summary>Titles of all visible top-level windows (browser windows show their active tab's title).</summary>
     public static List<string> VisibleWindowTitles()
     {
@@ -89,7 +123,68 @@ public static class MediaFilter
         return titles;
     }
 
+    /// <summary>
+    /// Titles of every tab in open browser windows, read through UI Automation (the tab strip lists all tabs, not just the
+    /// active one), so music in a background tab is recognised too. Web page contents are never touched: the walk skips
+    /// documents and stops at each tab. Slow-ish (tens of ms per window), so call it off the UI thread and cache the result.
+    /// </summary>
+    public static List<string> BrowserTabTitles()
+    {
+        var titles = new List<string>();
+        foreach (IntPtr hwnd in BrowserWindows())
+        {
+            try { CollectTabs(AutomationElement.FromHandle(hwnd), titles); }
+            // The window closed or stopped answering mid-walk: its tabs just aren't listed this time.
+            catch (Exception e) when (e is ElementNotAvailableException or COMException or InvalidOperationException or TimeoutException) { }
+        }
+        return titles;
+    }
+
+    private static void CollectTabs(AutomationElement window, List<string> titles)
+    {
+        var walker = TreeWalker.ControlViewWalker;
+        var queue = new Queue<(AutomationElement Element, int Depth)>();
+        queue.Enqueue((window, 0));
+        int visited = 0;
+        while (queue.Count > 0 && visited++ < 4000)
+        {
+            var (element, depth) = queue.Dequeue();
+            var type = element.Current.ControlType;
+            if (type == ControlType.TabItem)
+            {
+                string name = element.Current.Name;
+                if (!string.IsNullOrWhiteSpace(name)) titles.Add(name);
+                continue;
+            }
+            if ((type == ControlType.Document && depth > 0) || depth >= 16) continue;
+            for (var child = walker.GetFirstChild(element); child is not null; child = walker.GetNextSibling(child))
+                queue.Enqueue((child, depth + 1));
+        }
+    }
+
+    /// <summary>Visible top-level windows that belong to a browser process.</summary>
+    private static List<IntPtr> BrowserWindows()
+    {
+        var windows = new List<IntPtr>();
+        var names = new Dictionary<uint, bool>();
+        EnumWindows((hwnd, _) =>
+        {
+            if (!IsWindowVisible(hwnd) || GetWindowTextLength(hwnd) <= 0) return true;
+            GetWindowThreadProcessId(hwnd, out uint pid);
+            if (!names.TryGetValue(pid, out bool isBrowser))
+            {
+                try { using var p = Process.GetProcessById((int)pid); isBrowser = IsBrowser(p.ProcessName); }
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException) { isBrowser = false; } // already gone
+                names[pid] = isBrowser;
+            }
+            if (isBrowser) windows.Add(hwnd);
+            return true;
+        }, IntPtr.Zero);
+        return windows;
+    }
+
     private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
     [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowTextLength(IntPtr hwnd);

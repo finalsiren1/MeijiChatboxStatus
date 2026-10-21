@@ -3,7 +3,7 @@
 /* ════════════════════════ i18n ════════════════════════ */
 const I18N = {
   th: {
-    tagline: 'MCS · โชว์สถานะบน VRChat Chatbox ตลอดเวลา', saved: 'บันทึกแล้ว ✓',
+    verLatest: 'เป็นเวอร์ชันล่าสุด', verUpdate: 'มีอัปเดต', saved: 'บันทึกแล้ว ✓',
     start: 'เริ่มส่ง', stop: 'หยุดส่ง',
     previewTitle: 'ตัวอย่างบน Chatbox', notSending: 'ยังไม่ได้ส่ง', sending: 'กำลังส่ง ♡',
     chars: 'ตัวอักษร', lines: 'บรรทัด',
@@ -39,7 +39,7 @@ const I18N = {
     closeTitle: 'จะปิดโปรแกรม หรือซ่อนไว้?', closeText: 'ถ้าซ่อนไว้ แอปจะทำงานต่อที่ถาดไอคอนมุมขวาล่าง และยังส่ง Status ได้ตามปกติ ถ้าปิดโปรแกรม จะล้างข้อความบน Chatbox ให้ด้วย',
     dontAsk: 'จำตัวเลือกนี้ ไม่ต้องถามอีก (เปลี่ยนได้ในตั้งค่า)', cancel: 'ยกเลิก', closeTrayBtn: 'ซ่อนไว้ที่ถาดไอคอน',
     sourcesTitle: 'แหล่งเพลงที่โชว์ได้',
-    sourcesHint: 'โชว์เฉพาะแอปและเว็บเพลงเท่านั้น วิดีโอจาก TikTok, IG, Facebook หรือเว็บอื่น ๆ จะไม่ขึ้นบน Chatbox ถ้าเปิดในเบราว์เซอร์ ให้เปิดแท็บเพลงค้างไว้เป็นแท็บหลักของหน้าต่างนั้น',
+    sourcesHint: 'โชว์เฉพาะแอปและเว็บเพลงเท่านั้น วิดีโอจาก TikTok, IG, Facebook หรือเว็บอื่น ๆ จะไม่ขึ้นบน Chatbox ถ้าเปิดเพลงในเบราว์เซอร์ จะสลับไปแท็บอื่นก็ได้ แอปยังหาเพลงเจอ',
     extraSources: 'เพิ่มแอป/เว็บเพลงเอง (คั่นด้วย ,)', extraPh: 'เช่น MusicApp, Niconico', notMusic: 'ไม่ใช่แอป/เว็บเพลง — ไม่โชว์บน Chatbox',
     useOscQuery: 'ใช้ OSCQuery <em>(แนะนำ — ไม่ชนกับแอป OSC อื่น)</em>',
     ip: 'IP ของ VRChat', sendPort: 'พอร์ตส่ง', listenPort: 'พอร์ตรับ',
@@ -74,7 +74,7 @@ const I18N = {
     th_sakura: 'ซากุระ', th_lavender: 'ลาเวนเดอร์', th_mint: 'มิ้นต์', th_sky: 'ท้องฟ้า', th_night: 'กลางคืน',
   },
   en: {
-    tagline: 'MCS · Always-on status for your VRChat chatbox', saved: 'Saved ✓',
+    verLatest: 'Up to date', verUpdate: 'Update available', saved: 'Saved ✓',
     start: 'Start', stop: 'Stop',
     previewTitle: 'Chatbox preview', notSending: 'Not sending', sending: 'Sending ♡',
     chars: 'Characters', lines: 'Lines',
@@ -110,7 +110,7 @@ const I18N = {
     closeTitle: 'Exit the app, or hide it?', closeText: 'Hidden, the app keeps running in the tray (bottom-right) and keeps sending your status. Exiting also clears your chatbox.',
     dontAsk: 'Remember my choice, don\'t ask again (change it in Settings)', cancel: 'Cancel', closeTrayBtn: 'Hide to tray',
     sourcesTitle: 'Allowed music sources',
-    sourcesHint: 'Only music apps and music sites are shown. Videos from TikTok, IG, Facebook or any other site never reach your chatbox. In a browser, keep the music tab as the active tab of its window.',
+    sourcesHint: 'Only music apps and music sites are shown. Videos from TikTok, IG, Facebook or any other site never reach your chatbox. Music in a browser is found even when its tab isn\'t the one you\'re looking at.',
     extraSources: 'Add your own players/sites (comma separated)', extraPh: 'e.g. MusicApp, Niconico', notMusic: 'Not a music app/site — hidden from chatbox',
     useOscQuery: 'Use OSCQuery <em>(recommended — no port conflicts with other OSC apps)</em>',
     ip: 'VRChat IP', sendPort: 'Send port', listenPort: 'Receive port',
@@ -210,6 +210,7 @@ function onMessage(msg) {
     case 'init':
       S = msg.settings;
       $('#version').textContent = 'v' + msg.version;
+      $('#hdr-version').textContent = 'v' + msg.version;
       $('#log').replaceChildren();
       msg.log.forEach(addLog);
       upd = msg.update ?? null;
@@ -334,6 +335,13 @@ function renderUpdate() {
       : u.state === 'error' ? fmt(t('updFailed'), u.error) : fmt(t('updYouHave'), u.current);
     $('#update-btn').disabled = busy;
   }
+
+  // header badge: green check when up to date, orange dot when there's an update (nothing while unknown)
+  const badge = $('#ver-badge');
+  const badgeState = has ? 'new' : u.state === 'latest' ? 'ok' : '';
+  badge.hidden = !badgeState;
+  badge.className = 'ver-badge ' + badgeState;
+  $('#ver-text').textContent = badgeState ? t(has ? 'verUpdate' : 'verLatest') : '';
 
   // settings card
   $('#upd-status').textContent = has ? fmt(t('updAvailTitle'), u.latest)
@@ -759,6 +767,7 @@ function wireEvents() {
   $('#open-docs').addEventListener('click', () => send('openUrl', { url: 'https://docs.vrchat.com/docs/osc-overview' }));
   $('#exit-app').addEventListener('click', () => { flushSave(); send('exit'); });
   $('#update-btn').addEventListener('click', openUpdateModal);
+  $('#ver-badge').addEventListener('click', openUpdateModal);
   $('#upd-action').addEventListener('click', () => {
     if (upd?.latest) { openUpdateModal(); return; }
     updManual = true;
@@ -800,8 +809,8 @@ const Mock = {
         behavior: { autoWithVrc: true, closeWithVrc: false, closeAction: 'ask', checkUpdates: true },
       };
       setTimeout(() => {
-        onMessage({ type: 'init', settings, version: 'dev', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
-          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.1', checkedAt: '12:00', progress: 0 } });
+        onMessage({ type: 'init', settings, version: '2.0.3', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
+          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.3', checkedAt: '12:00', progress: 0 } });
         this.tick();
         setInterval(() => this.tick(), 1000);
       });
@@ -809,7 +818,7 @@ const Mock = {
       this.running = msg.type === 'start';
       this.tick();
     } else if (msg.type === 'checkUpdate') {
-      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.1', progress: 0 } });
+      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.3', progress: 0 } });
       setTimeout(() => onMessage({ type: 'update', update: this.release('available') }), 800);
     } else if (msg.type === 'installUpdate') {
       let p = 0;
@@ -830,7 +839,7 @@ const Mock = {
   pos: 42,
   download: 0,
   release(state) {
-    return { state, current: '2.0.1', latest: '2.0.2', sizeMb: 70, progress: 0, checkedAt: '12:00',
+    return { state, current: '2.0.3', latest: '2.0.4', sizeMb: 70, progress: 0, checkedAt: '12:00',
       url: 'https://github.com/finalsiren1/MeijiChatboxStatus/releases', notes: '## What\'s new\n- **Auto update**: get new versions from inside the app\n- Small fixes' };
   },
   tick() {

@@ -24,6 +24,9 @@ public sealed class MediaWatcher
     private string _trackKey = "";
     private readonly Dictionary<string, string?> _thumbnails = []; // per track; null = no artwork
     private readonly Dictionary<string, (bool Allowed, DateTime Checked)> _approval = [];
+    private List<string> _tabTitles = [];
+    private DateTime _tabTitlesAt = DateTime.MinValue;
+    private static readonly TimeSpan TabTitlesMaxAge = TimeSpan.FromSeconds(5);
 
     /// <summary>User-added allowed players/sites (see <see cref="MediaSettings.ExtraSources"/>).</summary>
     public string? ExtraSources { get; set; }
@@ -54,7 +57,7 @@ public sealed class MediaWatcher
         {
             // Look at every session, not just the one Windows calls "current": a TikTok tab shouldn't hide Spotify.
             var candidates = new List<Candidate>();
-            List<string>? windowTitles = null;
+            var titles = new TitleLookup();
             var current = _manager.GetCurrentSession();
             foreach (var s in _manager.GetSessions())
             {
@@ -64,15 +67,30 @@ public sealed class MediaWatcher
                 if (p is null || pb is null || t.Length == 0) continue;
                 string a = (p.Artist ?? "").Trim();
                 if (a.Length == 0) a = (p.AlbumArtist ?? "").Trim();
-                bool allowed = IsAllowed(s.SourceAppUserModelId, t, a, ref windowTitles);
+                bool allowed = await IsAllowedAsync(s.SourceAppUserModelId, t, a, titles);
                 candidates.Add(new Candidate(s, p, pb, t, a, allowed,
                     pb.PlaybackStatus == PlaybackStatus.Playing, current is not null && s.SourceAppUserModelId == current.SourceAppUserModelId));
             }
+            // Several tabs/apps can hold a session (e.g. a paused YouTube tab next to the one playing): prefer what's playing.
             var pick = candidates
                 .OrderByDescending(c => c.Allowed && c.Playing)
                 .ThenByDescending(c => c.Allowed)
+                .ThenByDescending(c => c.Playing)
                 .ThenByDescending(c => c.IsCurrent)
                 .FirstOrDefault();
+
+            // Nothing approved is playing, but a browser is involved: the music may be in a tab the browser didn't report.
+            if (pick is not { Allowed: true, Playing: true } && candidates.FirstOrDefault(c => MediaFilter.IsBrowser(c.Session.SourceAppUserModelId)) is { } browser)
+            {
+                titles.Tabs ??= await GetTabTitlesAsync();
+                if (MediaFilter.PlayingMusicTab(titles.Tabs, ExtraSources) is { } tabTitle)
+                {
+                    _trackKey = "tab|" + tabTitle;
+                    Current = new MediaInfo(tabTitle, "", FriendlySource(browser.Session.SourceAppUserModelId), true,
+                        TimeSpan.Zero, TimeSpan.Zero, null, true);
+                    return;
+                }
+            }
             if (pick is null) { Current = null; return; }
 
             var session = pick.Session;
@@ -140,7 +158,7 @@ public sealed class MediaWatcher
     /// Approval is remembered per track once granted (switching browser tabs afterwards doesn't hide it);
     /// a "no" is re-checked every few seconds in case the user brings the music tab to the front.
     /// </summary>
-    private bool IsAllowed(string appId, string title, string artist, ref List<string>? windowTitles)
+    private async Task<bool> IsAllowedAsync(string appId, string title, string artist, TitleLookup titles)
     {
         string key = $"{appId}|{title}|{artist}";
         var now = DateTime.UtcNow;
@@ -151,16 +169,41 @@ public sealed class MediaWatcher
         if (!MediaFilter.IsBrowser(appId)) allowed = MediaFilter.IsMusicApp(appId, ExtraSources);
         else
         {
-            windowTitles ??= MediaFilter.VisibleWindowTitles();
-            allowed = windowTitles.Any(w => MediaFilter.IsMusicTab(w, title, artist, ExtraSources));
+            // Active tabs first (cheap); then every tab, so music left playing in a background tab is found too.
+            titles.Windows ??= MediaFilter.VisibleWindowTitles();
+            allowed = titles.Windows.Any(w => MediaFilter.IsMusicTab(w, title, artist, ExtraSources));
+            if (!allowed)
+            {
+                titles.Tabs ??= await GetTabTitlesAsync();
+                allowed = titles.Tabs.Any(w => MediaFilter.IsMusicTab(w, title, artist, ExtraSources));
+            }
         }
         if (_approval.Count > 200) _approval.Clear();
         _approval[key] = (allowed, now);
         return allowed;
     }
 
+    private async Task<List<string>> GetTabTitlesAsync()
+    {
+        if (DateTime.UtcNow - _tabTitlesAt < TabTitlesMaxAge) return _tabTitles;
+        _tabTitles = await Task.Run(MediaFilter.BrowserTabTitles);
+        _tabTitlesAt = DateTime.UtcNow;
+        return _tabTitles;
+    }
+
+    /// <summary>Window/tab titles fetched at most once per poll.</summary>
+    private sealed class TitleLookup
+    {
+        public List<string>? Windows;
+        public List<string>? Tabs;
+    }
+
     /// <summary>Clears remembered decisions (call when the user edits the allowed-sources list).</summary>
-    public void ResetApprovals() => _approval.Clear();
+    public void ResetApprovals()
+    {
+        _approval.Clear();
+        _tabTitlesAt = DateTime.MinValue;
+    }
 
     private async Task<string?> ReadThumbnailAsync(IRandomAccessStreamReference? reference)
     {

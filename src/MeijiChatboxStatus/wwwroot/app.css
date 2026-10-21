@@ -13,7 +13,7 @@
   --soft: #ffe4ef; --soft-2: #f1e8ff;
   --border: #f6dbe8; --ring: rgba(255, 111, 165, .28);
   --shadow: 0 10px 30px -12px rgba(214, 92, 150, .28);
-  --ok: #3cc99a; --warn: #ffb547; --bad: #ff6b81;
+  --ok: #3cc99a; --warn: #ffb547; --bad: #ff6b81; --update: #ff8a1f;
   color-scheme: light;
 }
 [data-theme="lavender"] {
@@ -101,6 +101,19 @@ em { font-style: normal; color: var(--muted); font-size: 12px; }
 .brand h1 { font-size: 20px; letter-spacing: .2px;
   background: linear-gradient(90deg, var(--primary), var(--primary-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .brand small { color: var(--muted); }
+.ver-line { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.ver-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 0; border-radius: 99px; padding: 1px 9px 1px 3px;
+  font: inherit; font-size: 11.5px; font-weight: 600; cursor: default;
+}
+.ver-badge i { width: 15px; height: 15px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 9px; color: #fff; }
+.ver-badge.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, transparent); }
+.ver-badge.ok i { background: var(--ok); }
+.ver-badge.ok i::after { content: "✓"; font-weight: 700; }
+.ver-badge.new { color: var(--update); background: color-mix(in srgb, var(--update) 14%, transparent); cursor: pointer; }
+.ver-badge.new:hover { background: color-mix(in srgb, var(--update) 24%, transparent); }
+.ver-badge.new i { background: var(--update); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes bob { 50% { transform: translateY(-3px) rotate(-3deg); } }
 
 .pills { display: flex; align-items: center; gap: 8px; }

@@ -12,7 +12,7 @@
     <RootNamespace>MeijiChatboxStatus</RootNamespace>
     <AssemblyName>MeijiChatboxStatus</AssemblyName>
     <Product>Meiji Chatbox Status</Product>
-    <Version>2.0.2</Version>
+    <Version>2.0.3</Version>
     <Copyright>MIT License</Copyright>
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -24,6 +24,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Only for UI Automation (reading browser tab titles in MediaFilter); the WPF files already ship with WinForms. -->
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
     <!-- contentFiles are only the OSCQuery web explorer page, which this app doesn't need -->
     <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" ExcludeAssets="contentFiles" />

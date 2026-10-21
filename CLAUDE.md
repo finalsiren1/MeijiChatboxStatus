@@ -29,7 +29,7 @@
 - Install model: any copy that isn't `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\MeijiChatboxStatus.exe` runs in **setup mode**
   (WebUI install screen, no OSC/services): quick depth-limited scan for old versions (`Installer.Scan`), import old settings, delete old items,
   copy itself, shortcuts, HKCU Uninstall entry, then launch the installed copy. Debug builds always count as installed.
-  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version is 2.0.2 — don't bump it unless the user says so.
+  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version is 2.0.3 — don't bump it unless the user says so.
 - Updates (`Updater`): checks `releases/latest` on GitHub at startup (+10 s) and every 6 h when `Behavior.CheckUpdates` is on;
   notice at the top of the sidebar + Settings ▸ Updates; installs only after the user confirms in a popup. Downloads the asset
   `MeijiChatboxStatus.exe` (lite build: `MeijiChatboxStatus-lite.exe`) to `%LOCALAPPDATA%\MeijiChatboxStatus\updates\`, verifies size + SHA-256
@@ -49,6 +49,9 @@
 - One option "Open automatically with VRChat" (`AutoWithVrc`, on by default) — no "start sending when the app opens".
 - X button → popup asking exit/hide with a "don't ask again" checkbox (`CloseAction`: ask/tray/exit).
 - Music: only music apps/sites (`MediaFilter`); TikTok/IG/Facebook/NSFW must never leak — when unsure, hide.
+  Chrome reports only ONE media session to Windows (often not the music tab), so browser approval also reads every tab
+  title via UI Automation (`MediaFilter.BrowserTabTitles`, skips web content) and falls back to a tab marked
+  "- Audio playing" on a music site (`PlayingMusicTab`, English browser UI only).
 - UI wording must be plain and easy for anyone: say what happens, avoid technical jargon.
 
 ## Old code (VrcAfkNative — removed)

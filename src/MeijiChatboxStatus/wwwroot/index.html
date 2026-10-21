@@ -17,7 +17,10 @@
       <img src="icon.png" alt="" width="40" height="40">
       <div>
         <h1>Meiji Chatbox Status</h1>
-        <small data-i18n="tagline">MCS · โชว์สถานะบน VRChat Chatbox ตลอดเวลา</small>
+        <small class="ver-line">
+          <span id="hdr-version"></span>
+          <button type="button" class="ver-badge" id="ver-badge" hidden><i aria-hidden="true"></i><span id="ver-text"></span></button>
+        </small>
       </div>
     </div>
     <div class="pills">
@@ -132,7 +135,7 @@
         </div>
         <div class="card">
           <h3 data-i18n="sourcesTitle">แหล่งเพลงที่โชว์ได้</h3>
-          <p class="hint" data-i18n-html="sourcesHint">โชว์เฉพาะแอปและเว็บเพลงเท่านั้น วิดีโอจาก TikTok, IG, Facebook หรือเว็บอื่น ๆ จะไม่ขึ้นบน Chatbox ถ้าเปิดในเบราว์เซอร์ ให้เปิดแท็บเพลงค้างไว้เป็นแท็บหลักของหน้าต่างนั้น</p>
+          <p class="hint" data-i18n-html="sourcesHint">โชว์เฉพาะแอปและเว็บเพลงเท่านั้น วิดีโอจาก TikTok, IG, Facebook หรือเว็บอื่น ๆ จะไม่ขึ้นบน Chatbox ถ้าเปิดเพลงในเบราว์เซอร์ จะสลับไปแท็บอื่นก็ได้ แอปยังหาเพลงเจอ</p>
           <div class="chips sources" id="sources"></div>
           <label class="field"><span data-i18n="extraSources">เพิ่มแอป/เว็บเพลงเอง (คั่นด้วย ,)</span>
             <input type="text" data-bind="media.extraSources" spellcheck="false" data-i18n-ph="extraPh"></label>

@@ -242,3 +242,24 @@ public class UpdaterTests
     public void ReleaseWithoutExe_IsAnError() =>
         Assert.Throws<InvalidDataException>(() => Updater.ParseRelease(Release("v9.0.0", "other.zip"), new Version(2, 0, 1)));
 }
+
+public class PlayingTabTests
+{
+    [Theory]
+    [InlineData("(8) Void (feat. Someone) - YouTube - Audio playing - Memory usage - 480 MB", "Void (feat. Someone)")]
+    [InlineData("Song Name - YouTube Music - Audio playing", "Song Name")]
+    [InlineData("(9+) Cute Song - YouTube - Playing audio", "Cute Song")]
+    public void MusicSiteTabPlayingAudio_IsFound(string tab, string expected) =>
+        Assert.Equal(expected, MediaFilter.PlayingMusicTab(["Inbox - Mail", tab], null));
+
+    [Theory]
+    [InlineData("Funny clip | TikTok - Audio playing")]
+    [InlineData("Facebook - Audio playing - High memory usage - 849 MB")]
+    [InlineData("Watch YouTube videos here - Random site - Audio playing")]
+    [InlineData("Song - YouTube")] // a music site, but not the tab that's playing
+    public void OtherTabs_AreIgnored(string tab) => Assert.Null(MediaFilter.PlayingMusicTab([tab], null));
+
+    [Fact]
+    public void ExtraSources_CountAsMusicSites() =>
+        Assert.Equal("Track", MediaFilter.PlayingMusicTab(["Track - Niconico - Audio playing"], "Niconico"));
+}

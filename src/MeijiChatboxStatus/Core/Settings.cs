@@ -107,6 +107,8 @@ public sealed class BehaviorSettings
     public bool CloseWithVrc { get; set; } = false;
     /// <summary>What the window's X button does: "ask" (popup every time), "tray" (hide) or "exit".</summary>
     public string CloseAction { get; set; } = "ask";
+    /// <summary>Look for a newer release on GitHub at startup and every few hours (installing always asks first).</summary>
+    public bool CheckUpdates { get; set; } = true;
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,

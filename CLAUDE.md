@@ -29,7 +29,11 @@
 - Install model: any copy that isn't `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\MeijiChatboxStatus.exe` runs in **setup mode**
   (WebUI install screen, no OSC/services): quick depth-limited scan for old versions (`Installer.Scan`), import old settings, delete old items,
   copy itself, shortcuts, HKCU Uninstall entry, then launch the installed copy. Debug builds always count as installed.
-  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version stays 2.0.0 until the user says otherwise.
+  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version is 2.0.1 — don't bump it unless the user says so.
+- Updates (`Updater`): checks `releases/latest` on GitHub at startup (+10 s) and every 6 h when `Behavior.CheckUpdates` is on;
+  notice at the top of the sidebar + Settings ▸ Updates; installs only after the user confirms in a popup. Downloads the asset
+  `MeijiChatboxStatus.exe` (lite build: `MeijiChatboxStatus-lite.exe`) to `%LOCALAPPDATA%\MeijiChatboxStatus\updates\`, verifies size + SHA-256
+  (`digest` from the API), runs it with `--install`, then exits. Releases must attach the exe with exactly that name.
 - `--tray` = start hidden (used by the HKCU Run entry from `Autorun`, registered in Release builds only); WebView2 loads only when the window is first shown.
 - Advanced settings must carry a hint saying "if it already works, don't touch this".
 - Testing without disturbing the game: change `sendPort` in settings.json to another port and listen on UDP (change it back to 9000 afterwards).

@@ -16,6 +16,7 @@ Everything is sent over OSC, so your avatar needs no changes (except for touch c
 | 🔌 **OSCQuery** | VRChat finds the app by itself — no port conflicts with other OSC apps (VRCFT, VRCOSC, …) |
 | 🎮 **Opens with VRChat** | Start VRChat and your status starts; close it and the status stops (can be turned off in Settings) |
 | 🧹 **Never leaves a stale message** | Stopping or exiting always clears the chatbox — even after "End task" or a crash |
+| 🎁 **Built-in updates** | Tells you when a new version is out and updates itself in one click (always asks first) |
 | 🎀 **Friendly UI** | 5 themes (Sakura, Lavender, Mint, Sky, Night), Thai / English, live chatbox preview |
 
 ## 🚀 Getting started
@@ -24,9 +25,17 @@ Everything is sent over OSC, so your avatar needs no changes (except for touch c
    - If Windows shows *"Windows protected your PC"*, click **More info → Run anyway** (the file simply isn't code-signed).
 2. The setup screen quickly looks for **older versions** on your PC (the old `VrcAfkNative` app, leftover copies, shortcuts and startup entries)
    and lists what it found. Click **Install** — old versions are removed, their settings and counters are imported, and the app is installed
-   for your account (no admin rights needed) with Start Menu and desktop shortcuts. Running the downloaded exe again later updates it the same way.
+   for your account (no admin rights needed) with Start Menu and desktop shortcuts.
 3. In VRChat, enable OSC: **Action Menu ▸ Options ▸ OSC ▸ Enabled**.
 4. Press **▶ Start** (or just let it start when VRChat opens) — done! ♡
+
+### Updating
+
+From v2.0.1 on, the app checks GitHub Releases when it starts and every 6 hours. When a new version is out, a notice appears at the top left —
+click **Update**, confirm, and the app downloads it (checked against the release's SHA-256), closes, and reopens on the new version with your
+settings kept. You can also check by hand in **Settings ▸ Updates**, or turn automatic checking off there. Nothing is installed without your OK.
+
+Running a newer downloaded exe by hand updates the same way (that's also how to get from v2.0.0 to v2.0.1).
 
 To uninstall, use **Windows Settings ▸ Apps ▸ Installed apps ▸ Meiji Chatbox Status** (you'll be asked whether to keep your settings).
 
@@ -82,6 +91,7 @@ Messages are limited to VRChat's 144 characters / 9 lines without ever cutting a
 | Program | `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\` |
 | Settings | `%APPDATA%\MeijiChatboxStatus\settings.json` (copy it to move your setup to another PC) |
 | Log + WebView2 cache | `%LOCALAPPDATA%\MeijiChatboxStatus\` |
+| Downloaded updates | `%LOCALAPPDATA%\MeijiChatboxStatus\updates\` (removed after the update) |
 | Open with VRChat | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` → `MeijiChatboxStatus` |
 
 The old version's `vrc_afk_settings.txt` is imported automatically when it's found during setup.
@@ -115,6 +125,7 @@ src/MeijiChatboxStatus/
     ChatboxGuard.cs    clears the chatbox however the app exits
     Autorun.cs         "open with VRChat" (Windows startup entry)
     Installer.cs       per-user install/update/uninstall + quick scan for old versions
+    Updater.cs         checks GitHub Releases, downloads + verifies the new exe, hands over to it
   wwwroot/             WebUI (plain HTML/CSS/JS, embedded in the exe, works offline)
 tests/MeijiChatboxStatus.Tests/
 tools/
@@ -122,7 +133,11 @@ tools/
   audit-webui.mjs      finds unused UI strings / CSS
 ```
 
-The WebUI can be designed in a normal browser: open `src/MeijiChatboxStatus/wwwroot/index.html` and it runs with mock data.
+The WebUI can be designed in a normal browser: open `src/MeijiChatboxStatus/wwwroot/index.html` and it runs with mock data
+(`index.html#update` pretends a new version is available).
+
+Releasing: bump `<Version>` in the `.csproj`, run `publish.ps1`, and attach `dist\MeijiChatboxStatus.exe` (exactly that name) to a GitHub
+release tagged `vX.Y.Z`. Installed apps pick it up from `releases/latest`; drafts and pre-releases are ignored.
 
 ## 📜 License
 

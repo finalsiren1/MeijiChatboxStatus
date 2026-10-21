@@ -31,6 +31,8 @@ public sealed class MainForm : Form
     private readonly NotifyIcon _tray;
     private readonly ToolStripMenuItem _trayOpen, _trayToggle, _trayExit;
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 250 };
+    private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 }; // first check shortly after start
+    private readonly Updater _updater;
     private readonly Dictionary<string, string> _resources;
     private readonly string _version;
 
@@ -43,6 +45,7 @@ public sealed class MainForm : Form
     private int _tick;
     private string _lastState = "";
     private string? _lastArt;
+    private Version? _updateBalloonFor;
 
     public MainForm(EventWaitHandle showEvent, bool startHidden, bool setupMode)
     {
@@ -68,6 +71,8 @@ public sealed class MainForm : Form
         _engine.CountsChanged += () => _countsDirty = true;
         _engine.RunningChanged += UpdateTray;
         _vrc.Changed += OnVrcChanged;
+        _updater = new Updater(Assembly.GetExecutingAssembly().GetName().Version ?? new Version(2, 0, 1), _log);
+        _updater.Changed += OnUpdateChanged;
         _log.Added += entry => { if (IsHandleCreated && !IsDisposed) BeginInvoke(() => Post(new { type = "log", entry = LogDto(entry) })); };
 
         _web = new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = BackColor };
@@ -84,6 +89,7 @@ public sealed class MainForm : Form
             ContextMenuStrip = new ContextMenuStrip { Items = { _trayOpen, _trayToggle, new ToolStripSeparator(), _trayExit } },
         };
         _tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) ShowFromTray(); };
+        _tray.BalloonTipClicked += (_, _) => ShowFromTray();
         UpdateTray();
 
         _timer.Tick += OnTimer;
@@ -116,6 +122,8 @@ public sealed class MainForm : Form
         await _media.InitAsync();
         _vrc.Check();
         _timer.Start();
+        _updateTimer.Tick += OnUpdateTimer;
+        _updateTimer.Start();
     }
 
     protected override async void OnLoad(EventArgs e)
@@ -233,6 +241,7 @@ public sealed class MainForm : Form
                         settings = _settings,
                         version = _version,
                         log = _log.Snapshot().Select(LogDto),
+                        update = UpdateDto(),
                     });
                     PushState();
                     break;
@@ -251,6 +260,9 @@ public sealed class MainForm : Form
                     if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) OpenExternal(url);
                     break;
                 case "exit": ExitApp(); break;
+                case "checkUpdate": _ = _updater.CheckAsync(manual: true); break;
+                case "installUpdate": InstallUpdate(); break;
+                case "cancelUpdate": _updater.CancelDownload(); break;
                 case "closeChoice":
                     if (msg.GetProperty("action").GetString() == "exit") ExitApp();
                     else HideToTray();
@@ -310,6 +322,7 @@ public sealed class MainForm : Form
         incoming.Normalize();
         bool languageChanged = incoming.Language != _settings.Language;
         bool autorunChanged = incoming.Behavior.AutoWithVrc != _settings.Behavior.AutoWithVrc;
+        bool updateCheckTurnedOn = incoming.Behavior.CheckUpdates && !_settings.Behavior.CheckUpdates;
 
         _settings = incoming;
         if (autorunChanged) Autorun.Apply(_settings.Behavior.AutoWithVrc, _log);
@@ -323,6 +336,7 @@ public sealed class MainForm : Form
         _store.Save(_settings, _log);
         _countsDirty = false;
         if (languageChanged) UpdateTray();
+        if (updateCheckTurnedOn && _updater.State is "idle" or "error") _ = _updater.CheckAsync(manual: false);
         PushState();
     }
 
@@ -334,6 +348,52 @@ public sealed class MainForm : Form
             .Take(200)
             .Select(p => new { name = p.Key, value = p.Value.Message.ArgText, ago = (int)(now - p.Value.Utc).TotalSeconds });
         Post(new { type = "params", list });
+    }
+
+    // ───────────────────────────── Updates ─────────────────────────────
+
+    private async void OnUpdateTimer(object? sender, EventArgs e)
+    {
+        bool first = _updateTimer.Interval != (int)Updater.CheckEvery.TotalMilliseconds;
+        _updateTimer.Interval = (int)Updater.CheckEvery.TotalMilliseconds;
+        if (first) _updater.CleanupDownloads(); // the installer that started this copy has exited by now
+        if (_settings.Behavior.CheckUpdates) await _updater.CheckAsync(manual: false);
+    }
+
+    private async void InstallUpdate()
+    {
+        if (await _updater.DownloadAndInstallAsync()) ExitApp(); // the new copy waits for this one, then reopens
+    }
+
+    private void OnUpdateChanged()
+    {
+        Post(new { type = "update", update = UpdateDto() });
+        // Hidden in the tray: mention a new version once, without opening the window.
+        if (_updater.State == "available" && _updater.Latest is { } r && r.Version != _updateBalloonFor && !Visible)
+        {
+            _updateBalloonFor = r.Version;
+            bool th = _settings.Language == "th";
+            _tray.ShowBalloonTip(5000, "Meiji Chatbox Status",
+                th ? $"มีเวอร์ชันใหม่ v{r.Version.ToString(3)} แล้ว คลิกเพื่อเปิดหน้าต่างแล้วกดอัปเดต" : $"Version {r.Version.ToString(3)} is available. Click to open the app and update.",
+                ToolTipIcon.Info);
+        }
+    }
+
+    private object UpdateDto()
+    {
+        var r = _updater.Latest;
+        return new
+        {
+            state = _updater.State,
+            current = _updater.Current.ToString(3),
+            latest = r?.Version.ToString(3),
+            notes = r?.Notes,
+            url = r?.PageUrl,
+            sizeMb = r is null ? 0 : Math.Round(r.AssetSize / 1048576.0),
+            progress = _updater.Progress,
+            error = _updater.Error,
+            checkedAt = _updater.CheckedAt?.ToString("HH:mm"),
+        };
     }
 
     // ───────────────────────────── Loop ─────────────────────────────
@@ -506,6 +566,8 @@ public sealed class MainForm : Form
         if (disposing)
         {
             _timer.Dispose();
+            _updateTimer.Dispose();
+            _updater.Dispose();
             _tray.Dispose();
             _osc.Dispose();
         }

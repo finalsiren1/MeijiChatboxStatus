@@ -32,6 +32,15 @@
 
   <main class="layout">
     <aside class="side">
+      <section class="card update-card" id="update-card" hidden>
+        <span class="update-icon" aria-hidden="true">🎁</span>
+        <div class="update-info">
+          <b id="update-title"></b>
+          <small id="update-sub"></small>
+        </div>
+        <button type="button" class="btn primary" id="update-btn" data-i18n="updateNow">อัปเดต</button>
+      </section>
+
       <section class="card preview-card">
         <div class="card-head">
           <h2 data-i18n="previewTitle">ตัวอย่างบน Chatbox</h2>
@@ -212,6 +221,15 @@
           <p class="hint" id="osc-status"></p>
         </div>
 
+        <div class="card">
+          <h2 data-i18n="updates">อัปเดต</h2>
+          <div class="row"><span class="opt"><b id="upd-status"></b><em id="upd-detail"></em></span>
+            <button type="button" class="btn soft" id="upd-action"></button></div>
+          <label class="row"><span class="opt"><b data-i18n="checkUpdates">เช็คอัปเดตให้อัตโนมัติ</b>
+              <em data-i18n="checkUpdatesHint">เช็คตอนเปิดโปรแกรมและทุก 6 ชั่วโมง ถ้ามีเวอร์ชันใหม่จะแจ้งไว้ด้านซ้าย จะอัปเดตก็ต่อเมื่อคุณกดยืนยันเท่านั้น</em></span>
+            <span class="switch"><input type="checkbox" data-bind="behavior.checkUpdates"><i></i></span></label>
+        </div>
+
         <div class="card about">
           <img src="icon.png" alt="" width="56" height="56">
           <div>
@@ -296,6 +314,27 @@
         <button type="button" class="btn ghost" id="close-cancel" data-i18n="cancel">ยกเลิก</button>
         <button type="button" class="btn ghost danger" id="close-exit" data-i18n="closeExit">ปิดโปรแกรม</button>
         <button type="button" class="btn primary" id="close-tray" data-i18n="closeTrayBtn">ซ่อนไว้ที่ถาดไอคอน</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="update-modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="update-modal-title">
+      <h2 id="update-modal-title"></h2>
+      <p class="hint" id="update-modal-text"></p>
+      <div class="update-notes" id="update-notes-box">
+        <b data-i18n="updNotes">มีอะไรใหม่</b>
+        <div id="update-notes"></div>
+      </div>
+      <div class="update-progress" id="update-progress" hidden>
+        <div class="np-bar"><u id="update-progress-bar"></u></div>
+        <small id="update-progress-text"></small>
+      </div>
+      <p class="setup-status error" id="update-error" hidden></p>
+      <div class="modal-btns">
+        <button type="button" class="btn ghost link" id="update-page" data-i18n="updPage">ดูบน GitHub</button>
+        <button type="button" class="btn ghost" id="update-cancel" data-i18n="cancel">ยกเลิก</button>
+        <button type="button" class="btn primary" id="update-confirm" data-i18n="updateNow">อัปเดต</button>
       </div>
     </div>
   </div>

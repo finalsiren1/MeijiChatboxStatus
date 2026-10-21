@@ -28,11 +28,9 @@ internal static class Program
         }
         if (args.Contains(Installer.InstallArg) && !Installer.RunningInstalled)
         {
-            // Unattended install/update: same steps as the Install button, then open the installed app.
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
-            var log = new Logger();
-            string exe = Installer.Install(Installer.Scan(cts.Token), log, step => log.Info($"install: {step}"));
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Installer.InstallDir })?.Dispose();
+            // Unattended install/update (also how the in-app updater hands over): same steps as the Install button,
+            // then open the installed app.
+            RunUnattendedInstall();
             return;
         }
         if (args.Contains(Installer.UninstallArg))
@@ -66,6 +64,27 @@ internal static class Program
             ? new EventWaitHandle(false, EventResetMode.AutoReset)
             : new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
         Application.Run(new MainForm(showEvent, startHidden && !setupMode, setupMode));
+    }
+
+    private static void RunUnattendedInstall()
+    {
+        var log = new Logger();
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+            string exe = Installer.Install(Installer.Scan(cts.Token), log, step => log.Info($"install: {step}"));
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WorkingDirectory = Installer.InstallDir })?.Dispose();
+        }
+        catch (Exception e)
+        {
+            log.Error($"ติดตั้งไม่สำเร็จ: {e}");
+            ApplicationConfiguration.Initialize();
+            MessageBox.Show($"ติดตั้ง/อัปเดตไม่สำเร็จ\nInstall/update failed.\n\n{e.Message}", "Meiji Chatbox Status",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            // Don't leave the user without the app: reopen whatever is installed.
+            if (Installer.IsInstalled)
+                Process.Start(new ProcessStartInfo(Installer.InstalledExe) { UseShellExecute = true, WorkingDirectory = Installer.InstallDir })?.Dispose();
+        }
     }
 
     private static void RunUninstall()

@@ -462,6 +462,25 @@ input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px 
 .setup-status { min-height: 20px; margin: 6px 0 0; font-weight: 600; color: var(--primary); }
 .setup-status.error { color: var(--bad); }
 .btn:disabled { opacity: .5; cursor: default; transform: none; }
+/* ───── Update ───── */
+.update-card {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 12px 14px;
+  background: linear-gradient(135deg, var(--soft), var(--soft-2)); border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  animation: fadein .3s ease-out;
+}
+.update-icon { font-size: 24px; animation: bob 1.6s ease-in-out infinite; }
+.update-info { display: grid; min-width: 0; line-height: 1.35; }
+.update-info b { font-size: 13.5px; color: var(--primary); }
+.update-info small { color: var(--muted); font-size: 12px; }
+.update-card .btn { padding: 6px 14px; font-size: 12.5px; }
+.update-notes { background: var(--card-2); border: 1.5px solid var(--border); border-radius: 14px; padding: 10px 12px; font-size: 12.5px; }
+.update-notes > div { margin-top: 4px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; color: var(--muted); -webkit-user-select: text; user-select: text; }
+.update-progress { display: grid; gap: 4px; margin-top: 12px; }
+.update-progress .np-bar { height: 8px; }
+.update-progress .np-bar u { transition: width .3s ease-out; }
+.update-progress small { color: var(--muted); font-size: 12px; }
+.modal-btns .link { margin-right: auto; }
+
 /* ───── Narrow windows ───── */
 @media (max-width: 900px) {
   body { overflow: auto; }

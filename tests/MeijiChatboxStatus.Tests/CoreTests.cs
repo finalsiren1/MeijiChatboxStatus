@@ -201,3 +201,44 @@ public class MediaFilterTests
     public void BrowserTabs(string window, string title, string artist, bool expected) =>
         Assert.Equal(expected, MediaFilter.IsMusicTab(window, title, artist, null));
 }
+public class UpdaterTests
+{
+    private static string Release(string tag, string assetName = "MeijiChatboxStatus.exe", bool prerelease = false) => $$"""
+        {
+          "tag_name": "{{tag}}", "draft": false, "prerelease": {{(prerelease ? "true" : "false")}},
+          "html_url": "https://github.com/finalsiren1/MeijiChatboxStatus/releases/tag/{{tag}}",
+          "body": "## Changes\n- stuff",
+          "assets": [
+            { "name": "README.md", "size": 10, "browser_download_url": "https://example.invalid/readme" },
+            { "name": "{{assetName}}", "size": 1234, "digest": "sha256:ABCDEF",
+              "browser_download_url": "https://example.invalid/exe" }
+          ]
+        }
+        """;
+
+    [Fact]
+    public void NewerRelease_IsReturnedWithAsset()
+    {
+        var r = Updater.ParseRelease(Release("v2.0.2"), new Version(2, 0, 1, 0));
+        Assert.NotNull(r);
+        Assert.Equal(new Version(2, 0, 2), r.Version);
+        Assert.Equal("https://example.invalid/exe", r.AssetUrl);
+        Assert.Equal(1234, r.AssetSize);
+        Assert.Equal("abcdef", r.Sha256);
+    }
+
+    [Theory]
+    [InlineData("v2.0.1")]
+    [InlineData("v2.0.0")]
+    [InlineData("2.0")]
+    public void SameOrOlderRelease_IsIgnored(string tag) =>
+        Assert.Null(Updater.ParseRelease(Release(tag), new Version(2, 0, 1, 0)));
+
+    [Fact]
+    public void Prerelease_IsIgnored() =>
+        Assert.Null(Updater.ParseRelease(Release("v9.0.0", prerelease: true), new Version(2, 0, 1)));
+
+    [Fact]
+    public void ReleaseWithoutExe_IsAnError() =>
+        Assert.Throws<InvalidDataException>(() => Updater.ParseRelease(Release("v9.0.0", "other.zip"), new Version(2, 0, 1)));
+}

@@ -48,6 +48,17 @@ const I18N = {
     vrcOn: 'VRChat เปิดอยู่', vrcOff: 'ยังไม่เจอ VRChat',
     aboutText: 'ฟรีและโอเพนซอร์ส (MIT) แชร์ให้เพื่อนใช้ได้เลย ♡', openData: 'เปิดโฟลเดอร์ตั้งค่า', oscDocs: 'คู่มือ OSC ของ VRChat', exitApp: 'ออกจากแอป',
     logTitle: 'บันทึกการทำงาน',
+    updates: 'อัปเดต', updateNow: 'อัปเดต', updCheck: 'เช็คอัปเดต',
+    updAvailTitle: 'มีเวอร์ชันใหม่ v{0} ✨', updYouHave: 'ตอนนี้ใช้ v{0} อยู่',
+    updChecking: 'กำลังเช็คอัปเดต…', updLatest: 'เป็นเวอร์ชันล่าสุดแล้ว ♡', updIdle: 'ยังไม่ได้เช็คอัปเดต',
+    updError: 'เช็คอัปเดตไม่สำเร็จ: {0}', updFailed: 'อัปเดตไม่สำเร็จ: {0}',
+    updInfo: 'เวอร์ชันที่ใช้อยู่ v{0}', updCheckedAt: 'เช็คล่าสุด {0} น.',
+    checkUpdates: 'เช็คอัปเดตให้อัตโนมัติ',
+    checkUpdatesHint: 'เช็คตอนเปิดโปรแกรมและทุก 6 ชั่วโมง ถ้ามีเวอร์ชันใหม่จะแจ้งไว้ด้านซ้าย จะอัปเดตก็ต่อเมื่อคุณกดยืนยันเท่านั้น',
+    updModalTitle: 'อัปเดตเป็น v{0} เลยไหม?',
+    updModalText: 'แอปจะดาวน์โหลดเวอร์ชันใหม่ (ประมาณ {0} MB) แล้วปิดและเปิดตัวเองใหม่ภายในไม่กี่วินาที การตั้งค่าและตัวนับยังอยู่ครบ ระหว่างนั้นข้อความบน Chatbox จะหายไปแป๊บนึง',
+    updNotes: 'มีอะไรใหม่', updPage: 'ดูบน GitHub',
+    updDownloading: 'กำลังดาวน์โหลด… {0}%', updInstalling: 'กำลังติดตั้ง… เดี๋ยวแอปจะเปิดขึ้นมาใหม่เองนะ ♡',
     setupTitleNew: 'ติดตั้ง Meiji Chatbox Status', setupTitleUpdate: 'อัปเดต Meiji Chatbox Status',
     setupIntro: 'โปรแกรมจะติดตั้งลงเครื่อง สร้างทางลัดที่ Start Menu และหน้าจอ แล้วลบเวอร์ชันเก่าที่เจอด้านล่างทั้งหมด การตั้งค่าและตัวนับเดิมจะถูกเก็บไว้',
     setupScanning: 'กำลังค้นหาเวอร์ชันเก่าในเครื่อง…', setupFound: 'เจอของเก่า {0} รายการ — จะลบทั้งหมด', setupNone: 'ไม่เจอเวอร์ชันเก่าในเครื่อง ✓',
@@ -108,6 +119,17 @@ const I18N = {
     vrcOn: 'VRChat is running', vrcOff: 'VRChat not found',
     aboutText: 'Free & open source (MIT) — share it with your friends ♡', openData: 'Open settings folder', oscDocs: 'VRChat OSC guide', exitApp: 'Exit app',
     logTitle: 'Activity log',
+    updates: 'Updates', updateNow: 'Update', updCheck: 'Check for updates',
+    updAvailTitle: 'Version {0} is out ✨', updYouHave: 'You have v{0}',
+    updChecking: 'Checking for updates…', updLatest: 'You\'re on the latest version ♡', updIdle: 'Not checked yet',
+    updError: 'Couldn\'t check for updates: {0}', updFailed: 'Update failed: {0}',
+    updInfo: 'Installed version v{0}', updCheckedAt: 'last checked {0}',
+    checkUpdates: 'Check for updates automatically',
+    checkUpdatesHint: 'Checks when the app opens and every 6 hours. A new version shows up on the left — nothing is installed until you confirm.',
+    updModalTitle: 'Update to v{0}?',
+    updModalText: 'The app downloads the new version (about {0} MB), then closes and reopens itself within a few seconds. Your settings and counters are kept. Your chatbox goes blank for a moment meanwhile.',
+    updNotes: 'What\'s new', updPage: 'View on GitHub',
+    updDownloading: 'Downloading… {0}%', updInstalling: 'Installing… the app will reopen by itself ♡',
     setupTitleNew: 'Install Meiji Chatbox Status', setupTitleUpdate: 'Update Meiji Chatbox Status',
     setupIntro: 'The app will be installed for your account with Start Menu and desktop shortcuts, and every older version listed below will be removed. Your existing settings and counters are kept.',
     setupScanning: 'Looking for older versions…', setupFound: 'Found {0} old item(s) — all will be removed', setupNone: 'No older versions found ✓',
@@ -190,8 +212,10 @@ function onMessage(msg) {
       $('#version').textContent = 'v' + msg.version;
       $('#log').replaceChildren();
       msg.log.forEach(addLog);
+      upd = msg.update ?? null;
       renderAll();
       break;
+    case 'update': applyUpdate(msg.update); break;
     case 'state': applyState(msg); break;
     case 'art': renderArt(msg.src); break;
     case 'log': addLog(msg.entry); break;
@@ -271,6 +295,7 @@ function renderAll() {
   renderCloseSeg();
   renderSources();
   updateCloseWithVrc();
+  renderUpdate();
 }
 
 /** "Exit when VRChat closes" only makes sense when the app isn't managing itself around VRChat. */
@@ -278,6 +303,83 @@ function updateCloseWithVrc() {
   const off = !!S.behavior.autoWithVrc;
   $('#close-with-vrc-row').classList.toggle('disabled', off);
   $('#close-with-vrc-row input').disabled = off;
+}
+
+/* ── updates ── */
+let upd = null;          // update status pushed by the app (Updater.cs)
+let updManual = false;   // the user pressed "check": say so even when nothing is new
+
+const updBusy = () => upd?.state === 'downloading' || upd?.state === 'installing';
+
+function applyUpdate(u) {
+  const was = upd?.state;
+  upd = u;
+  if (updManual && was === 'checking' && u.state !== 'checking') {
+    updManual = false;
+    if (u.state === 'latest') toast(t('updLatest'));
+  }
+  renderUpdate();
+}
+
+function renderUpdate() {
+  if (!S || !upd) return;
+  const u = upd, has = !!u.latest, busy = updBusy();
+
+  // sidebar notice
+  $('#update-card').hidden = !has;
+  if (has) {
+    $('#update-title').textContent = fmt(t('updAvailTitle'), u.latest);
+    $('#update-sub').textContent = u.state === 'downloading' ? fmt(t('updDownloading'), Math.round(u.progress * 100))
+      : u.state === 'installing' ? t('updInstalling')
+      : u.state === 'error' ? fmt(t('updFailed'), u.error) : fmt(t('updYouHave'), u.current);
+    $('#update-btn').disabled = busy;
+  }
+
+  // settings card
+  $('#upd-status').textContent = has ? fmt(t('updAvailTitle'), u.latest)
+    : u.state === 'checking' ? t('updChecking')
+    : u.state === 'latest' ? t('updLatest')
+    : u.state === 'error' ? fmt(t('updError'), u.error) : t('updIdle');
+  $('#upd-detail').textContent = fmt(t('updInfo'), u.current) + (u.checkedAt ? ' · ' + fmt(t('updCheckedAt'), u.checkedAt) : '');
+  const action = $('#upd-action');
+  action.textContent = t(has ? 'updateNow' : 'updCheck');
+  action.className = 'btn ' + (has ? 'primary' : 'soft');
+  action.disabled = busy || u.state === 'checking';
+
+  // popup
+  if (!$('#update-modal').hidden) renderUpdateModal();
+}
+
+function renderUpdateModal() {
+  const u = upd, busy = updBusy();
+  $('#update-modal-title').textContent = fmt(t('updModalTitle'), u.latest);
+  $('#update-modal-text').textContent = fmt(t('updModalText'), u.sizeMb || 70);
+  // Release notes are Markdown; show them as plain text without the heading/bold markers.
+  const notes = (u.notes ?? '').replace(/^#+\s*/gm, '').replace(/\*\*/g, '').trim();
+  $('#update-notes-box').hidden = !notes;
+  $('#update-notes').textContent = notes;
+  $('#update-progress').hidden = !busy;
+  $('#update-progress-bar').style.width = (u.state === 'installing' ? 100 : u.progress * 100).toFixed(1) + '%';
+  $('#update-progress-text').textContent = u.state === 'installing' ? t('updInstalling') : fmt(t('updDownloading'), Math.round(u.progress * 100));
+  const err = $('#update-error');
+  err.hidden = u.state !== 'error';
+  err.textContent = fmt(t('updFailed'), u.error ?? '');
+  $('#update-confirm').disabled = busy;
+  $('#update-cancel').disabled = u.state === 'installing';
+  $('#update-page').hidden = !u.url;
+}
+
+function openUpdateModal() {
+  if (!upd?.latest) return;
+  $('#update-modal').hidden = false;
+  renderUpdateModal();
+  $('#update-confirm').focus();
+}
+
+function closeUpdateModal() {
+  if (upd?.state === 'installing') return;
+  if (upd?.state === 'downloading') send('cancelUpdate');
+  $('#update-modal').hidden = true;
 }
 
 function applyLang() {
@@ -642,7 +744,11 @@ function wireEvents() {
   $('#close-exit').addEventListener('click', () => chooseClose('exit'));
   $('#close-cancel').addEventListener('click', () => chooseClose(null));
   $('#close-modal').addEventListener('click', e => { if (e.target === e.currentTarget) chooseClose(null); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#close-modal').hidden) chooseClose(null); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('#close-modal').hidden) chooseClose(null);
+    else if (!$('#update-modal').hidden) closeUpdateModal();
+  });
   $$('#lang-seg button').forEach(b => b.addEventListener('click', () => {
     S.language = b.dataset.lang;
     lang = S.language;
@@ -652,6 +758,16 @@ function wireEvents() {
   $('#open-data').addEventListener('click', () => send('openDataFolder'));
   $('#open-docs').addEventListener('click', () => send('openUrl', { url: 'https://docs.vrchat.com/docs/osc-overview' }));
   $('#exit-app').addEventListener('click', () => { flushSave(); send('exit'); });
+  $('#update-btn').addEventListener('click', openUpdateModal);
+  $('#upd-action').addEventListener('click', () => {
+    if (upd?.latest) { openUpdateModal(); return; }
+    updManual = true;
+    send('checkUpdate');
+  });
+  $('#update-confirm').addEventListener('click', () => { flushSave(); send('installUpdate'); });
+  $('#update-cancel').addEventListener('click', closeUpdateModal);
+  $('#update-page').addEventListener('click', () => send('openUrl', { url: upd.url }));
+  $('#update-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeUpdateModal(); });
   $('#tip-osc-close').addEventListener('click', () => { $('#tip-osc').classList.add('hidden'); storageSet('tipOscHidden', '1'); });
   if (storageGet('tipOscHidden')) $('#tip-osc').classList.add('hidden');
   window.addEventListener('beforeunload', flushSave);
@@ -681,22 +797,42 @@ const Mock = {
         media: { enabled: true, template: '🎵 {title} - {artist}\n{bar} {pos}/{dur}', showWhenPaused: false, barStyle: 'line', barWidth: 10 },
         afk: { enabled: true, template: '💤 AFK อยู่น้า ({afktime})' },
         counters: [{ enabled: true, parameter: 'HeadPat', message: '💗 โดนลูบหัวไปแล้ว {count} ครั้ง!', seconds: 4, count: 12 }],
-        behavior: { autoWithVrc: true, closeWithVrc: false, closeAction: 'ask' },
+        behavior: { autoWithVrc: true, closeWithVrc: false, closeAction: 'ask', checkUpdates: true },
       };
       setTimeout(() => {
-        onMessage({ type: 'init', settings, version: 'dev', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }] });
+        onMessage({ type: 'init', settings, version: 'dev', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
+          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.1', checkedAt: '12:00', progress: 0 } });
         this.tick();
         setInterval(() => this.tick(), 1000);
       });
     } else if (msg.type === 'start' || msg.type === 'stop') {
       this.running = msg.type === 'start';
       this.tick();
+    } else if (msg.type === 'checkUpdate') {
+      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.1', progress: 0 } });
+      setTimeout(() => onMessage({ type: 'update', update: this.release('available') }), 800);
+    } else if (msg.type === 'installUpdate') {
+      let p = 0;
+      this.download = setInterval(() => {
+        p += 0.08;
+        if (p < 1) { onMessage({ type: 'update', update: { ...this.release('downloading'), progress: p } }); return; }
+        clearInterval(this.download);
+        onMessage({ type: 'update', update: this.release('installing') });
+      }, 250);
+    } else if (msg.type === 'cancelUpdate') {
+      clearInterval(this.download);
+      onMessage({ type: 'update', update: this.release('available') });
     } else if (msg.type === 'getParams') {
       onMessage({ type: 'params', list: [{ name: 'HeadPat', value: 'false', ago: 2 }, { name: 'AFK', value: 'false', ago: 30 }, { name: 'VelocityX', value: '0.12', ago: 0 }] });
     }
   },
   running: false,
   pos: 42,
+  download: 0,
+  release(state) {
+    return { state, current: '2.0.1', latest: '2.0.2', sizeMb: 70, progress: 0, checkedAt: '12:00',
+      url: 'https://github.com/finalsiren1/MeijiChatboxStatus/releases', notes: '## What\'s new\n- **Auto update**: get new versions from inside the app\n- Small fixes' };
+  },
   tick() {
     this.pos = (this.pos + 1) % 200;
     const now = new Date();

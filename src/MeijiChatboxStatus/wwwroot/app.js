@@ -809,8 +809,8 @@ const Mock = {
         behavior: { autoWithVrc: true, closeWithVrc: false, closeAction: 'ask', checkUpdates: true },
       };
       setTimeout(() => {
-        onMessage({ type: 'init', settings, version: '2.0.3', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
-          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.3', checkedAt: '12:00', progress: 0 } });
+        onMessage({ type: 'init', settings, version: '2.0.4', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
+          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.4', checkedAt: '12:00', progress: 0 } });
         this.tick();
         setInterval(() => this.tick(), 1000);
       });
@@ -818,7 +818,7 @@ const Mock = {
       this.running = msg.type === 'start';
       this.tick();
     } else if (msg.type === 'checkUpdate') {
-      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.3', progress: 0 } });
+      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.4', progress: 0 } });
       setTimeout(() => onMessage({ type: 'update', update: this.release('available') }), 800);
     } else if (msg.type === 'installUpdate') {
       let p = 0;
@@ -839,7 +839,7 @@ const Mock = {
   pos: 42,
   download: 0,
   release(state) {
-    return { state, current: '2.0.3', latest: '2.0.4', sizeMb: 70, progress: 0, checkedAt: '12:00',
+    return { state, current: '2.0.4', latest: '2.0.5', sizeMb: 70, progress: 0, checkedAt: '12:00',
       url: 'https://github.com/finalsiren1/MeijiChatboxStatus/releases', notes: '## What\'s new\n- **Auto update**: get new versions from inside the app\n- Small fixes' };
   },
   tick() {

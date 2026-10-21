@@ -75,7 +75,8 @@ public static partial class MediaFilter
         return false;
     }
 
-    // Chromium browsers (Chrome, Edge, ...) append this to the accessible name of a tab that is making sound (English UI).
+    // Chromium browsers (Chrome, Edge, ...) append this to the accessible name of a tab that is making sound (English UI);
+    // CollectTabs adds the first one to Firefox tabs that are playing.
     private static readonly string[] AudioMarkers = [" - Audio playing", " - Playing audio"];
     [GeneratedRegex(@"^\(\d+\+?\)\s*")]
     private static partial Regex NotificationCountRegex();
@@ -153,13 +154,35 @@ public static partial class MediaFilter
             if (type == ControlType.TabItem)
             {
                 string name = element.Current.Name;
-                if (!string.IsNullOrWhiteSpace(name)) titles.Add(name);
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                // Firefox doesn't put the sound state in the tab name like Chromium does; mark it the same way so
+                // PlayingMusicTab treats both alike.
+                if (element.Current.ClassName == "tabbrowser-tab" && FirefoxTabPlaysSound(element, walker)) name += AudioMarkers[0];
+                titles.Add(name);
                 continue;
             }
             if ((type == ControlType.Document && depth > 0) || depth >= 16) continue;
             for (var child = walker.GetFirstChild(element); child is not null; child = walker.GetNextSibling(child))
                 queue.Enqueue((child, depth + 1));
         }
+    }
+
+    // Names of Firefox's tab sound button when the tab is NOT audibly playing: autoplay blocked ("Play tab") or muted.
+    private static readonly string[] FirefoxSilentButtons = ["Play tab", "Unmute tab", "เล่นแท็บ", "เลิกปิดเสียงแท็บ"];
+
+    /// <summary>
+    /// Firefox (and its forks) shows a sound button on a tab only while it has media; the close button is the only other button.
+    /// The button's name is in the browser's language, so any sound button counts except the known "blocked"/"muted" names.
+    /// </summary>
+    private static bool FirefoxTabPlaysSound(AutomationElement tab, TreeWalker walker)
+    {
+        for (var child = walker.GetFirstChild(tab); child is not null; child = walker.GetNextSibling(child))
+        {
+            var info = child.Current;
+            if (info.ControlType != ControlType.Button || info.ClassName.Contains("close", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!FirefoxSilentButtons.Contains(info.Name, StringComparer.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 
     /// <summary>Visible top-level windows that belong to a browser process.</summary>

@@ -81,7 +81,7 @@ Messages are limited to VRChat's 144 characters / 9 lines without ever cutting a
 - **Nothing shows in the chatbox** — make sure OSC is enabled in VRChat, and that Settings ▸ Advanced uses IP `127.0.0.1` and send port `9000`.
 - **The OSC dot is yellow** — the app is ready but VRChat hasn't sent anything yet (VRChat only sends parameters when they change — try moving).
 - **The OSC dot is red** — the receive port is taken by another app. Enable OSCQuery (the default) or pick another receive port.
-- **Music doesn't show** — only music apps and music sites are shown (see the list in the Music tab). In a browser, the app reads the tab titles (Windows doesn't say which site is playing), so the music can be in any tab — even one the browser didn't report to Windows, as long as the tab shows it's playing audio (English browser UI). With a browser in another language, if the music isn't picked up, switch to the music tab once. Using a player or site that isn't listed? Add it under *Add your own players/sites*.
+- **Music doesn't show** — only music apps and music sites are shown (see the list in the Music tab). In a browser, the app reads the tab titles (Windows doesn't say which site is playing), so the music can be in any tab — even one the browser didn't report to Windows, as long as the tab shows it's playing audio (Chrome/Edge: English browser UI; Firefox: the tab's speaker icon). With a browser in another language, if the music isn't picked up, switch to the music tab once. Using a player or site that isn't listed? Add it under *Add your own players/sites*.
 - **Logs** — the *Log* tab in the app, or `%LOCALAPPDATA%\MeijiChatboxStatus\app.log`.
 
 ## 📁 Where things are stored

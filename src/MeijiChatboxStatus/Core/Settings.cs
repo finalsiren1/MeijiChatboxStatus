@@ -5,7 +5,8 @@ namespace MeijiChatboxStatus.Core;
 
 public sealed class AppSettings
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = CurrentVersion;
+    public const int CurrentVersion = 2;
     public string Language { get; set; } = "th";
     public string Theme { get; set; } = "sakura";
 
@@ -100,11 +101,11 @@ public sealed class CounterRule
 
 public sealed class BehaviorSettings
 {
-    /// <summary>"Open with VRChat": waits hidden in the tray from Windows login (Run key), starts sending when VRChat opens,
-    /// stops when it closes.</summary>
+    /// <summary>"Open with VRChat": a hidden watcher started at Windows login (see <see cref="Autorun"/>) opens the app each
+    /// time VRChat starts; the app starts sending when it sees VRChat.</summary>
     public bool AutoWithVrc { get; set; } = true;
-    /// <summary>Exit the app when VRChat closes. Only applies when <see cref="AutoWithVrc"/> is off (otherwise it just stops).</summary>
-    public bool CloseWithVrc { get; set; } = false;
+    /// <summary>Exit the app (clearing the chatbox) when VRChat closes. When off, open-with-VRChat just stops sending.</summary>
+    public bool CloseWithVrc { get; set; } = true;
     /// <summary>What the window's X button does: "ask" (popup every time), "tray" (hide) or "exit".</summary>
     public string CloseAction { get; set; } = "ask";
     /// <summary>Look for a newer release on GitHub at startup and every few hours (installing always asks first).</summary>
@@ -153,6 +154,13 @@ public sealed class SettingsStore
             {
                 var s = JsonSerializer.Deserialize(File.ReadAllText(FilePath), SettingsJsonContext.Default.AppSettings) ?? new();
                 s.Normalize();
+                if (s.Version < AppSettings.CurrentVersion)
+                {
+                    // v1 (2.0.4 and older) ignored "close with VRChat" while "open with VRChat" was on; both now default on.
+                    if (s.Version < 2) s.Behavior.CloseWithVrc = true;
+                    s.Version = AppSettings.CurrentVersion;
+                    Save(s, log);
+                }
                 return s;
             }
             var imported = LegacyImport.TryImport(log);

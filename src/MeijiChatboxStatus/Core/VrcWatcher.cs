@@ -12,13 +12,16 @@ public sealed class VrcWatcher
 
     public void Check()
     {
-        bool running;
-        var processes = Process.GetProcessesByName("VRChat");
-        running = processes.Length > 0;
-        foreach (var p in processes) p.Dispose();
-
+        bool running = IsVrcRunning();
         if (running == IsRunning) return;
         IsRunning = running;
         Changed?.Invoke(running);
+    }
+
+    public static bool IsVrcRunning()
+    {
+        var processes = Process.GetProcessesByName("VRChat");
+        foreach (var p in processes) p.Dispose();
+        return processes.Length > 0;
     }
 }

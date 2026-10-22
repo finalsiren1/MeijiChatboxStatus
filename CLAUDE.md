@@ -29,12 +29,15 @@
 - Install model: any copy that isn't `%LOCALAPPDATA%\Programs\MeijiChatboxStatus\MeijiChatboxStatus.exe` runs in **setup mode**
   (WebUI install screen, no OSC/services): quick depth-limited scan for old versions (`Installer.Scan`), import old settings, delete old items,
   copy itself, shortcuts, HKCU Uninstall entry, then launch the installed copy. Debug builds always count as installed.
-  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version is 2.0.4 — don't bump it unless the user says so.
+  CLI: `--install` (unattended), `--uninstall` (Apps & Features). The release version is 2.0.5 — don't bump it unless the user says so.
 - Updates (`Updater`): checks `releases/latest` on GitHub at startup (+10 s) and every 6 h when `Behavior.CheckUpdates` is on;
   notice at the top of the sidebar + Settings ▸ Updates; installs only after the user confirms in a popup. Downloads the asset
   `MeijiChatboxStatus.exe` (lite build: `MeijiChatboxStatus-lite.exe`) to `%LOCALAPPDATA%\MeijiChatboxStatus\updates\`, verifies size + SHA-256
   (`digest` from the API), runs it with `--install`, then exits. Releases must attach the exe with exactly that name.
-- `--tray` = start hidden (used by the HKCU Run entry from `Autorun`, registered in Release builds only); WebView2 loads only when the window is first shown.
+- `--watch` = the hidden VRChat watcher (`Autorun.RunWatcher`; no window/tray/OSC), started by the HKCU Run entry (Release builds only)
+  and by the app when "open with VRChat" is on; it opens the app (window shown) each time VRChat goes from closed to running and
+  survives the app exiting. Turning the option off removes the Run entry and signals the watcher to quit. Old `--tray` = `--watch`.
+  WebView2 loads only when the window is first shown.
 - Advanced settings must carry a hint saying "if it already works, don't touch this".
 - Testing without disturbing the game: change `sendPort` in settings.json to another port and listen on UDP (change it back to 9000 afterwards).
 - Careful: if VRChat is running, the app starts sending to the real chatbox immediately (`AutoWithVrc`) — stop it and clear the chatbox after testing.
@@ -46,7 +49,8 @@
 - Font **Noto Sans Thai** (not a cute font like Mali); the chatbox preview has no character/tail.
 - Delete buttons are text labels (`delPage` / `del` in `I18N`), not trash-can icons.
 - Stopping/exiting **always clears the chatbox** (no option); no notification sound (always send `,sTF`).
-- One option "Open automatically with VRChat" (`AutoWithVrc`, on by default) — no "start sending when the app opens".
+- Two independent options, both on by default: "Open automatically with VRChat" (`AutoWithVrc`) and "Exit the app when VRChat closes"
+  (`CloseWithVrc`). Nothing may appear at Windows startup (only the invisible watcher). No "start sending when the app opens".
 - X button → popup asking exit/hide with a "don't ask again" checkbox (`CloseAction`: ask/tray/exit).
 - Music: only music apps/sites (`MediaFilter`); TikTok/IG/Facebook/NSFW must never leak — when unsure, hide.
   Chrome reports only ONE media session to Windows (often not the music tab), so browser approval also reads every tab

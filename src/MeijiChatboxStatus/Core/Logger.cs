@@ -12,14 +12,15 @@ public sealed class Logger
 
     public event Action<LogEntry>? Added;
 
-    public Logger()
+    /// <param name="fresh">Start a new log file. Helper processes pass false so they don't wipe the running app's log.</param>
+    public Logger(bool fresh = true)
     {
         try
         {
             string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MeijiChatboxStatus");
             Directory.CreateDirectory(dir);
             _filePath = Path.Combine(dir, "app.log");
-            File.WriteAllText(_filePath, $"=== Meiji Chatbox Status {DateTime.Now:yyyy-MM-dd HH:mm:ss} ==={Environment.NewLine}");
+            if (fresh) File.WriteAllText(_filePath, $"=== Meiji Chatbox Status {DateTime.Now:yyyy-MM-dd HH:mm:ss} ==={Environment.NewLine}");
         }
         catch (Exception) { _filePath = null; } // logging to disk is best-effort; the in-app log still works
     }

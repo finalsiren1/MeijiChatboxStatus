@@ -30,8 +30,8 @@ const I18N = {
     appearance: 'หน้าตา', language: 'ภาษา', theme: 'ธีม',
     interval: 'อัปเดตทุก', behavior: 'การทำงาน',
     autoWithVrc: 'เปิดโปรแกรมเองเมื่อเปิด VRChat',
-    autoWithVrcHint: 'เปิด VRChat แล้วเริ่มส่ง Status ให้เลย ปิด VRChat ก็หยุดส่งและล้าง Chatbox (โปรแกรมจะรอเงียบ ๆ ที่ถาดไอคอนตั้งแต่เปิดเครื่อง)',
-    closeWithVrcHint: 'ใช้ได้เมื่อปิดตัวเลือกด้านบน',
+    autoWithVrcHint: 'เปิด VRChat เมื่อไหร่ โปรแกรมจะเปิดขึ้นมาและเริ่มส่ง Status ให้เลย ทุกครั้ง (ตอนเปิดเครื่องจะไม่มีหน้าต่างหรือไอคอนโผล่ขึ้นมา)',
+    closeWithVrcHint: 'ปิด VRChat แล้วโปรแกรมจะล้าง Chatbox และปิดตัวเองไปด้วย',
     advanced: 'ขั้นสูง',
     advancedHint: '<b>ถ้าใช้งานได้ปกติอยู่แล้ว ไม่ต้องแก้ส่วนนี้</b> — สำหรับคนที่เข้าใจ OSC หรือใช้แอป OSC หลายตัวพร้อมกัน ถ้าแก้แล้วมีปัญหา ให้กลับไปใช้ค่าเดิม: เปิด OSCQuery, IP 127.0.0.1, พอร์ตส่ง 9000, พอร์ตรับ 9001, อัปเดตทุก 2s',
     closeWithVrc: 'ปิดโปรแกรมเมื่อปิด VRChat',
@@ -101,8 +101,8 @@ const I18N = {
     appearance: 'Appearance', language: 'Language', theme: 'Theme',
     interval: 'Update every', behavior: 'Behavior',
     autoWithVrc: 'Open automatically with VRChat',
-    autoWithVrcHint: 'Opening VRChat starts your status; closing it stops and clears the chatbox (the app waits quietly in the tray from startup).',
-    closeWithVrcHint: 'Only when the option above is off',
+    autoWithVrcHint: 'Every time you start VRChat, the app opens and starts your status (nothing pops up when your PC starts).',
+    closeWithVrcHint: 'When VRChat closes, the app clears your chatbox and closes too.',
     advanced: 'Advanced',
     advancedHint: '<b>If everything works, leave this alone.</b> For people who know OSC or run several OSC apps at once. If something breaks, go back to the defaults: OSCQuery on, IP 127.0.0.1, send port 9000, receive port 9001, update every 2s.',
     closeWithVrc: 'Exit the app when VRChat closes',
@@ -295,15 +295,7 @@ function renderAll() {
   renderThemes();
   renderCloseSeg();
   renderSources();
-  updateCloseWithVrc();
   renderUpdate();
-}
-
-/** "Exit when VRChat closes" only makes sense when the app isn't managing itself around VRChat. */
-function updateCloseWithVrc() {
-  const off = !!S.behavior.autoWithVrc;
-  $('#close-with-vrc-row').classList.toggle('disabled', off);
-  $('#close-with-vrc-row input').disabled = off;
 }
 
 /* ── updates ── */
@@ -423,7 +415,6 @@ function bindInputs() {
       updateRangeLabel(input);
       if (path === 'media.barWidth') renderBarStyles();
       if (path === 'osc.useOscQuery') applyState(state);
-      if (path === 'behavior.autoWithVrc') updateCloseWithVrc();
       scheduleSave();
     });
     if (input.tagName === 'TEXTAREA') input.addEventListener('focus', () => { lastTextarea = input; });
@@ -806,11 +797,11 @@ const Mock = {
         media: { enabled: true, template: '🎵 {title} - {artist}\n{bar} {pos}/{dur}', showWhenPaused: false, barStyle: 'line', barWidth: 10 },
         afk: { enabled: true, template: '💤 AFK อยู่น้า ({afktime})' },
         counters: [{ enabled: true, parameter: 'HeadPat', message: '💗 โดนลูบหัวไปแล้ว {count} ครั้ง!', seconds: 4, count: 12 }],
-        behavior: { autoWithVrc: true, closeWithVrc: false, closeAction: 'ask', checkUpdates: true },
+        behavior: { autoWithVrc: true, closeWithVrc: true, closeAction: 'ask', checkUpdates: true },
       };
       setTimeout(() => {
-        onMessage({ type: 'init', settings, version: '2.0.4', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
-          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.4', checkedAt: '12:00', progress: 0 } });
+        onMessage({ type: 'init', settings, version: '2.0.5', log: [{ time: '12:00:00', level: 'info', text: 'Mock mode' }],
+          update: location.hash === '#update' ? this.release('available') : { state: 'latest', current: '2.0.5', checkedAt: '12:00', progress: 0 } });
         this.tick();
         setInterval(() => this.tick(), 1000);
       });
@@ -818,7 +809,7 @@ const Mock = {
       this.running = msg.type === 'start';
       this.tick();
     } else if (msg.type === 'checkUpdate') {
-      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.4', progress: 0 } });
+      onMessage({ type: 'update', update: { state: 'checking', current: '2.0.5', progress: 0 } });
       setTimeout(() => onMessage({ type: 'update', update: this.release('available') }), 800);
     } else if (msg.type === 'installUpdate') {
       let p = 0;
@@ -839,7 +830,7 @@ const Mock = {
   pos: 42,
   download: 0,
   release(state) {
-    return { state, current: '2.0.4', latest: '2.0.5', sizeMb: 70, progress: 0, checkedAt: '12:00',
+    return { state, current: '2.0.5', latest: '2.0.6', sizeMb: 70, progress: 0, checkedAt: '12:00',
       url: 'https://github.com/finalsiren1/MeijiChatboxStatus/releases', notes: '## What\'s new\n- **Auto update**: get new versions from inside the app\n- Small fixes' };
   },
   tick() {

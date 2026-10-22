@@ -37,7 +37,7 @@ public static class ChatboxGuard
             using var parent = Process.GetProcessById(parentId);
             // This process only sleeps until the app exits: hand its startup memory back to Windows.
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
-            EmptyWorkingSet(Process.GetCurrentProcess().Handle);
+            TrimWorkingSet();
             parent.WaitForExit();
         }
         catch (ArgumentException) { } // already gone
@@ -56,6 +56,13 @@ public static class ChatboxGuard
             udp.Send(packet, packet.Length, new IPEndPoint(ip, osc.SendPort));
         }
         catch (Exception) { } // nothing more we can do on the way out
+    }
+
+    /// <summary>Gives this process's memory back to Windows (for helper processes that mostly sleep).</summary>
+    public static void TrimWorkingSet()
+    {
+        using var self = Process.GetCurrentProcess();
+        EmptyWorkingSet(self.Handle);
     }
 
     [System.Runtime.InteropServices.DllImport("psapi.dll")]

@@ -38,7 +38,7 @@ public sealed class MainForm : Form
 
     private AppSettings _settings;
     private CoreWebView2Environment? _env;
-    private bool _webReady, _exiting, _countsDirty, _trayHintShown, _startHidden, _servicesStarted;
+    private bool _webReady, _exiting, _countsDirty, _trayHintShown, _servicesStarted;
     /// <summary>Running from a downloaded copy: the window only shows the install/update screen, nothing is sent.</summary>
     private readonly bool _setupMode;
     private List<OldItem>? _oldItems;
@@ -47,9 +47,8 @@ public sealed class MainForm : Form
     private string? _lastArt;
     private Version? _updateBalloonFor;
 
-    public MainForm(EventWaitHandle showEvent, bool startHidden, bool setupMode)
+    public MainForm(EventWaitHandle showEvent, bool setupMode)
     {
-        _startHidden = startHidden;
         _setupMode = setupMode;
         _version = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion.Split('+')[0] ?? "2.0.0";
@@ -95,18 +94,6 @@ public sealed class MainForm : Form
         _timer.Tick += OnTimer;
         ThreadPool.RegisterWaitForSingleObject(showEvent,
             (_, _) => { if (IsHandleCreated && !IsDisposed) BeginInvoke(ShowFromTray); }, null, -1, false);
-    }
-
-    /// <summary>When launched by Windows startup the window stays hidden in the tray until opened.</summary>
-    protected override void SetVisibleCore(bool value)
-    {
-        if (_startHidden)
-        {
-            _startHidden = false;
-            if (!IsHandleCreated) CreateHandle();
-            value = false;
-        }
-        base.SetVisibleCore(value);
     }
 
     // Services run as soon as the window handle exists (even hidden); the WebUI loads on first show (OnLoad),
@@ -486,7 +473,7 @@ public sealed class MainForm : Form
         {
             _log.Info("🎮 VRChat ปิดแล้ว");
             _engine.ResetAvatarState();
-            if (b.CloseWithVrc && !b.AutoWithVrc) { ExitApp(); return; }
+            if (b.CloseWithVrc) { ExitApp(); return; }
             if (b.AutoWithVrc) _engine.Stop();
         }
         PushState();

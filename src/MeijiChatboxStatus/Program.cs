@@ -7,7 +7,7 @@ namespace MeijiChatboxStatus;
 
 internal static class Program
 {
-    private const string MutexName = "MeijiChatboxStatus.SingleInstance";
+    public const string MutexName = "MeijiChatboxStatus.SingleInstance";
     public const string ShowEventName = "MeijiChatboxStatus.ShowWindow";
     private const string WebView2Download = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
 
@@ -39,7 +39,12 @@ internal static class Program
             RunUninstall();
             return;
         }
-        bool startHidden = args.Contains(Autorun.TrayArg);
+        if ((args.Contains(Autorun.WatchArg) || args.Contains(Autorun.LegacyTrayArg)) && Installer.RunningInstalled)
+        {
+            // Started at Windows login: wait invisibly and open the app each time VRChat starts.
+            Autorun.RunWatcher(MutexName, new Logger(fresh: false));
+            return;
+        }
         // Any copy that isn't the installed one (e.g. the downloaded exe) acts as the installer/updater.
         bool setupMode = !Installer.RunningInstalled;
 
@@ -47,7 +52,7 @@ internal static class Program
         if (!isFirst)
         {
             // Already running (maybe hidden in the tray): ask that instance to show itself.
-            if (startHidden || setupMode) return;
+            if (setupMode) return;
             try { using var ev = EventWaitHandle.OpenExisting(ShowEventName); ev.Set(); }
             catch (WaitHandleCannotBeOpenedException) { }
             return;
@@ -63,7 +68,7 @@ internal static class Program
         using var showEvent = setupMode
             ? new EventWaitHandle(false, EventResetMode.AutoReset)
             : new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
-        Application.Run(new MainForm(showEvent, startHidden && !setupMode, setupMode));
+        Application.Run(new MainForm(showEvent, setupMode));
     }
 
     private static void RunUnattendedInstall()

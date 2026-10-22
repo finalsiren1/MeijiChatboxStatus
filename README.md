@@ -14,7 +14,7 @@ Everything is sent over OSC, so your avatar needs no changes (except for touch c
 | 😴 **AFK** | VRChat reports when you take off your headset or unfocus the game; shows how long you've been away |
 | 💗 **Touch counters** | Counts whenever an avatar parameter turns on (e.g. a Contact Receiver on your head) and briefly shows a message |
 | 🔌 **OSCQuery** | VRChat finds the app by itself — no port conflicts with other OSC apps (VRCFT, VRCOSC, …) |
-| 🎮 **Opens with VRChat** | Start VRChat and your status starts; close it and the status stops (can be turned off in Settings) |
+| 🎮 **Opens and closes with VRChat** | Start VRChat and the app opens with your status on; close VRChat and the app clears the chatbox and closes (each can be turned off in Settings) |
 | 🧹 **Never leaves a stale message** | Stopping or exiting always clears the chatbox — even after "End task" or a crash |
 | 🎁 **Built-in updates** | Tells you when a new version is out and updates itself in one click (always asks first) |
 | 🎀 **Friendly UI** | 5 themes (Sakura, Lavender, Mint, Sky, Night), Thai / English, live chatbox preview |
@@ -41,8 +41,11 @@ To uninstall, use **Windows Settings ▸ Apps ▸ Installed apps ▸ Meiji Chatb
 
 The interface opens in Thai; switch to English in **Settings ▸ Appearance ▸ Language**.
 
-After the first run, the app starts your status every time you open VRChat (it waits quietly in the system tray from Windows startup).
-To turn this off: **Settings ▸ Behavior ▸ Open automatically with VRChat**.
+After the first run, the app opens and starts your status every time you open VRChat, and closes when VRChat closes.
+Nothing shows up when Windows starts: only a tiny invisible watcher (no window, no tray icon, a few MB of memory) runs,
+waiting for VRChat. Closing the app yourself doesn't stop the watcher, so the app still opens the next time you start VRChat.
+To change this: **Settings ▸ Behavior ▸ Open automatically with VRChat** / **Exit the app when VRChat closes**
+(turning off "open" also stops the watcher).
 
 > Task Manager shows two `MeijiChatboxStatus` processes. The second one is a tiny watcher (a few MB of RAM) that clears your chatbox if the main app is closed abruptly.
 
@@ -123,7 +126,7 @@ src/MeijiChatboxStatus/
     TextFormat.cs      variables, line tidying, 144-char limit, progress bars
     Settings.cs        JSON settings + import from the old version
     ChatboxGuard.cs    clears the chatbox however the app exits
-    Autorun.cs         "open with VRChat" (Windows startup entry)
+    Autorun.cs         "open with VRChat" (startup entry + hidden VRChat watcher)
     Installer.cs       per-user install/update/uninstall + quick scan for old versions
     Updater.cs         checks GitHub Releases, downloads + verifies the new exe, hands over to it
   wwwroot/             WebUI (plain HTML/CSS/JS, embedded in the exe, works offline)

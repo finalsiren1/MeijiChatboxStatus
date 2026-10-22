@@ -42,8 +42,20 @@ public static class ChatboxGuard
         }
         catch (ArgumentException) { } // already gone
         catch (InvalidOperationException) { }
-        Clear(SettingsStore.ReadOscSettings());
+
+        // VRChat ignores a chatbox message that arrives too soon after the previous one, so the app's own clear
+        // (and this first one) can be dropped if a status went out just before exit. Repeat once that window has passed.
+        var osc = SettingsStore.ReadOscSettings();
+        for (int i = 0; i < ClearRepeats; i++)
+        {
+            if (i > 0) Thread.Sleep(ClearRetryDelay);
+            Clear(osc);
+        }
     }
+
+    /// <summary>Longer than VRChat's chatbox rate limit, so a repeated clear can't be dropped as well.</summary>
+    public static readonly TimeSpan ClearRetryDelay = TimeSpan.FromSeconds(2);
+    private const int ClearRepeats = 3;
 
     /// <summary>Sends an empty chatbox message. Safe to call from any thread, even while crashing.</summary>
     public static void Clear(OscSettings osc)

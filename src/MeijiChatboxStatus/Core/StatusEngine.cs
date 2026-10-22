@@ -78,8 +78,19 @@ public sealed class StatusEngine
         if (!IsRunning) return;
         IsRunning = false;
         _osc.Send("/chatbox/input", "", true, false);
+        ClearAgainLater();
         _log.Info("⏹ หยุดส่งแล้ว และล้าง Chatbox");
         RunningChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// VRChat ignores a message that arrives too soon after the previous one, so the clear above is lost if a status
+    /// went out just before. Send it again once that window has passed (on exit, ChatboxGuard does this instead).
+    /// </summary>
+    private async void ClearAgainLater()
+    {
+        await Task.Delay(ChatboxGuard.ClearRetryDelay); // resumes on the UI thread
+        if (!IsRunning) _osc.Send("/chatbox/input", "", true, false);
     }
 
     /// <summary>Called every ~250 ms.</summary>

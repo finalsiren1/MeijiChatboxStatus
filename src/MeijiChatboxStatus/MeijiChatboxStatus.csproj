@@ -12,7 +12,7 @@
     <RootNamespace>MeijiChatboxStatus</RootNamespace>
     <AssemblyName>MeijiChatboxStatus</AssemblyName>
     <Product>Meiji Chatbox Status</Product>
-    <Version>2.0.5</Version>
+    <Version>2.0.6</Version>
     <Copyright>MIT License</Copyright>
     <InvariantGlobalization>false</InvariantGlobalization>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>

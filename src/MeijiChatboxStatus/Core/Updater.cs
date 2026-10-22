@@ -41,6 +41,7 @@ public sealed class Updater : IDisposable
     public DateTime? CheckedAt { get; private set; }
     /// <summary>Raised on the caller's thread (the UI thread) whenever the state above changes.</summary>
     public event Action? Changed;
+    private bool _refreshing;
 
     public Updater(Version current, Logger log)
     {
@@ -58,15 +59,7 @@ public sealed class Updater : IDisposable
         Set("checking");
         try
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-            using var req = new HttpRequestMessage(HttpMethod.Get, LatestApi);
-            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-            using var res = await _http.SendAsync(req, cts.Token);
-            if (!res.IsSuccessStatusCode) throw new HttpRequestException($"GitHub {(int)res.StatusCode} {res.ReasonPhrase}");
-            string json = await res.Content.ReadAsStringAsync(cts.Token);
-
-            CheckedAt = DateTime.Now;
-            Latest = ParseRelease(json, Current);
+            Latest = await FetchLatestAsync();
             if (Latest is null)
             {
                 Set("latest");
@@ -85,6 +78,18 @@ public sealed class Updater : IDisposable
             else _log.Warn($"เช็คอัปเดตอัตโนมัติไม่สำเร็จ (จะลองใหม่ภายหลัง): {msg}");
             Set("error", msg);
         }
+    }
+
+    private async Task<ReleaseInfo?> FetchLatestAsync()
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var req = new HttpRequestMessage(HttpMethod.Get, LatestApi);
+        req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        using var res = await _http.SendAsync(req, cts.Token);
+        if (!res.IsSuccessStatusCode) throw new HttpRequestException($"GitHub {(int)res.StatusCode} {res.ReasonPhrase}");
+        string json = await res.Content.ReadAsStringAsync(cts.Token);
+        CheckedAt = DateTime.Now;
+        return ParseRelease(json, Current);
     }
 
     /// <summary>
@@ -123,6 +128,23 @@ public sealed class Updater : IDisposable
     /// <summary>Downloads and verifies the new exe, then starts it in install mode. Returns true when the app should exit now.</summary>
     public async Task<bool> DownloadAndInstallAsync()
     {
+        if (_refreshing || State is "downloading" or "installing") return false;
+        _refreshing = true;
+        // The update may have been found hours ago: ask again so a newer release published since then is installed
+        // directly (e.g. 2.0.3 → 2.0.5, not 2.0.4 first). If GitHub can't be reached, the one already found is fine.
+        try
+        {
+            if (await FetchLatestAsync() is { } newest && (Latest is null || newest.Version > Latest.Version))
+            {
+                _log.Info($"✨ มีเวอร์ชันใหม่กว่าเดิมอีก ข้ามไปติดตั้ง v{newest.Version.ToString(3)} เลย");
+                Latest = newest;
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or JsonException or InvalidDataException)
+        {
+            _log.Warn($"เช็คเวอร์ชันล่าสุดซ้ำไม่สำเร็จ ติดตั้ง v{Latest?.Version.ToString(3)} ที่เจอไว้แทน: {(e is TaskCanceledException ? "หมดเวลาเชื่อมต่อ GitHub" : e.Message)}");
+        }
+        finally { _refreshing = false; }
         string? exe = await DownloadAsync();
         if (exe is null) return false;
         try

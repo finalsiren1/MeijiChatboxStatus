@@ -305,6 +305,7 @@ input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px 
 .switch i {
   position: absolute; inset: 0; border-radius: 99px; background: var(--soft-2);
   border: 1.5px solid var(--border); transition: background .2s;
+  pointer-events: none; /* clicks must reach the checkbox; page/counter switches aren't inside a <label> */
 }
 .switch i::after {
   content: ""; position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%;
